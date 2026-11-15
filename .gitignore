@@ -1,0 +1,22 @@
+# OS & Editors
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# User-dropped custom image assets (keep folder tracked)
+kanagawa-theme/assets/*
+!kanagawa-theme/assets/.gitkeep
+
+# Installer & temp artifacts
+*.pixel-backup
+*.pixel-new
+*.tmp
+*.bak
