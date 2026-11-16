@@ -8,13 +8,13 @@
 
 | Theme Studio — Profiles (`🇻🇳 VI`) | Theme Studio — Surfaces & Glass (`🇺🇸 EN`) |
 | :---: | :---: |
-| ![Theme Studio Profiles VI](docs/screenshots/theme-studio-profiles.png) | ![Theme Studio Surfaces EN](docs/screenshots/theme-studio-surfaces.png) |
-| *Chuyển hồ sơ 1-click, đổi ngôn ngữ VI/EN ngay trên thanh tiêu đề (`Ctrl+Alt+K`)* | *1-click VI/EN toggle, 60fps glassmorphism & per-region opacity sliders* |
+| ![Theme Studio Profiles Live](docs/screenshots/studio-profiles-live.jpg) | ![Theme Studio Surfaces Live](docs/screenshots/studio-surfaces-live.jpg) |
+| *Chuyển hồ sơ 1-click (`Midnight Aqua`) & đổi ngôn ngữ VI/EN ngay trên app thật* | *Chế độ `Tokyo Night` + thanh trượt kính mờ & độ trong suốt từng vùng (`EN`)* |
 
-| Kanagawa Home & Composer | Custom Wallpaper + Review Panel | Custom Avatars + Diff View |
+| Colors, Gradients & Avatars (`Ctrl+Alt+K`) | Kanagawa Home & Composer | Custom Avatars + Diff View |
 | :---: | :---: | :---: |
-| ![Kanagawa Theme Home](docs/screenshots/kanagawa-home.png) | ![Custom Wallpaper & Review Panel](docs/screenshots/custom-wallpaper-review.png) | ![Custom Avatars & Right Diff Panel](docs/screenshots/custom-avatars-diff.png) |
-| *Kanagawa Wave & gradient composer* | *Translucent 3-column layout* | *Custom user/agent avatars & code diff* |
+| ![Theme Studio Colors and Avatars](docs/screenshots/studio-colors-avatars-live.jpg) | ![Kanagawa Theme Home](docs/screenshots/kanagawa-home.png) | ![Custom Avatars & Right Diff Panel](docs/screenshots/custom-avatars-diff.png) |
+| *Chỉnh bảng màu, gradient & avatar trực tiếp* | *Kanagawa Wave & gradient composer* | *Custom user/agent avatars & code diff* |
 
 ---
 
