@@ -14,6 +14,10 @@ npm-debug.log*
 # User-dropped custom image assets (keep folder tracked)
 kanagawa-theme/assets/*
 !kanagawa-theme/assets/.gitkeep
+!kanagawa-theme/assets/library/
+kanagawa-theme/assets/library/*
+kanagawa-theme/repo-link.json
+kanagawa-theme/.live-watch.json
 
 # Installer & temp artifacts
 *.pixel-backup

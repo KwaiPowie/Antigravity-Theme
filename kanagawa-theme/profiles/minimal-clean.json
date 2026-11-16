@@ -1,0 +1,134 @@
+{
+  "id": "minimal-clean",
+  "name": "Minimal Clean",
+  "description": "Solid dragon palette, circle straight avatars",
+  "builtIn": true,
+  "preserveWallpaper": false,
+  "preserveAvatars": true,
+  "updatedAt": "2026-11-15T18:13:01.084Z",
+  "config": {
+    "schemaVersion": 2,
+    "activeProfile": "minimal-clean",
+    "preset": "kanagawa-dragon",
+    "wallpaper": "NONE",
+    "wallpaperLight": "NONE",
+    "wallpaperPosition": "right top",
+    "wallpaperPositionLight": "SAME",
+    "wallpaperFit": "cover",
+    "wallpaperEffects": {
+      "blur": 0,
+      "brightness": 100,
+      "contrast": 100,
+      "saturate": 100,
+      "opacity": 100,
+      "scale": 100,
+      "scrimOpacity": 75,
+      "scrimStyle": "directional"
+    },
+    "surfaces": {
+      "sidebarOpacity": 92,
+      "panelOpacity": 94,
+      "chatOpacity": 92,
+      "userBubbleOpacity": 58,
+      "composerOpacity": 44,
+      "codeOpacity": 72,
+      "editorOpacity": 64,
+      "overlayOpacity": 96,
+      "titlebarOpacity": 74,
+      "glassBlur": 0,
+      "glassSaturate": 130,
+      "panelRadius": 14,
+      "cardRadius": 12,
+      "composerRadius": 16,
+      "bubbleRadius": 16
+    },
+    "avatars": {
+      "userVisible": true,
+      "userSize": 36,
+      "userRadius": 50,
+      "userRotate": 0,
+      "agentVisible": true,
+      "agentSize": 36,
+      "agentRadius": 50,
+      "agentRotate": 0
+    },
+    "composer": {
+      "rimStart": "#8EA4A2",
+      "rimMid": "#C5C9C5",
+      "rimEnd": "#C4B28A",
+      "innerStart": "#24221E",
+      "innerMid": "#181614",
+      "innerEnd": "#2B241D",
+      "userBubbleStart": "#26282A",
+      "userBubbleEnd": "#1C1A17",
+      "userBubbleBorder": "#8EA4A2"
+    },
+    "typography": {
+      "uiFont": "",
+      "monoFont": "",
+      "chatFontSize": 0,
+      "codeFontSize": 0,
+      "lineHeight": 1.62
+    },
+    "userAvatar": "KEEP_EMBEDDED",
+    "agentAvatar": {
+      "image": "SVG_STAR",
+      "bgStops": [
+        "#F3ECD8",
+        "#E6D9B8",
+        "#D8C89E"
+      ],
+      "iconStops": [
+        "#8EA4A2",
+        "#625E5A",
+        "#1D1C19"
+      ]
+    },
+    "dark": {
+      "chromeBg": "#151412",
+      "chromeFg": "#C5C9C5",
+      "primary": "#C4B28A",
+      "accentBlue": "#8BA4B0",
+      "accentAqua": "#8EA4A2",
+      "accentGreen": "#87A987",
+      "accentPink": "#C4746E",
+      "accentViolet": "#8992A7",
+      "accentOrange": "#B6927B",
+      "text": "#C5C9C5",
+      "textMuted": "#A6A69C",
+      "textSubtle": "#737C73",
+      "surfaceBase": "#181614",
+      "sidebarBase": "#131210",
+      "overlayBase": "#1A1815",
+      "scrimBase": "#100F0E",
+      "selection": "#2D4F67"
+    },
+    "light": {
+      "chromeBg": "#E6DEC8",
+      "chromeFg": "#3A3832",
+      "primary": "#4D699B",
+      "text": "#3A3832",
+      "textMuted": "#686459",
+      "paper0": "#D2C9AE",
+      "paper1": "#DCD4BC",
+      "paper2": "#E6DEC8",
+      "paper3": "#F3ECD8",
+      "surfaceBase": "#F5EFE0",
+      "sidebarBase": "#EAE2CE",
+      "overlayBase": "#F3ECD8",
+      "scrimBase": "#F3ECD8"
+    },
+    "loading": {
+      "title": "Antigravity",
+      "subtitle": "Ready for Minimal Clean...",
+      "style": "kanagawa-wave",
+      "showEmblem": true,
+      "showProgress": true
+    },
+    "studio": {
+      "showTriggerPill": true,
+      "pillPosition": "bottom-right",
+      "language": "vi"
+    }
+  }
+}

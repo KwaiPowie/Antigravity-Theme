@@ -1,0 +1,134 @@
+{
+  "id": "midnight-aqua",
+  "name": "Midnight Aqua",
+  "description": "Midnight Aqua palette",
+  "builtIn": true,
+  "preserveWallpaper": true,
+  "preserveAvatars": true,
+  "updatedAt": "2026-11-15T18:13:01.081Z",
+  "config": {
+    "schemaVersion": 2,
+    "activeProfile": "midnight-aqua",
+    "preset": "midnight-aqua",
+    "wallpaper": "KEEP_EMBEDDED",
+    "wallpaperLight": "SAME",
+    "wallpaperPosition": "right top",
+    "wallpaperPositionLight": "SAME",
+    "wallpaperFit": "cover",
+    "wallpaperEffects": {
+      "blur": 0,
+      "brightness": 100,
+      "contrast": 100,
+      "saturate": 100,
+      "opacity": 100,
+      "scale": 100,
+      "scrimOpacity": 75,
+      "scrimStyle": "directional"
+    },
+    "surfaces": {
+      "sidebarOpacity": 64,
+      "panelOpacity": 42,
+      "chatOpacity": 66,
+      "userBubbleOpacity": 58,
+      "composerOpacity": 44,
+      "codeOpacity": 72,
+      "editorOpacity": 64,
+      "overlayOpacity": 96,
+      "titlebarOpacity": 74,
+      "glassBlur": 0,
+      "glassSaturate": 130,
+      "panelRadius": 14,
+      "cardRadius": 12,
+      "composerRadius": 16,
+      "bubbleRadius": 16
+    },
+    "avatars": {
+      "userVisible": true,
+      "userSize": 36,
+      "userRadius": 18,
+      "userRotate": 18,
+      "agentVisible": true,
+      "agentSize": 36,
+      "agentRadius": 18,
+      "agentRotate": -18
+    },
+    "composer": {
+      "rimStart": "#7DCFFF",
+      "rimMid": "#E1EEF4",
+      "rimEnd": "#73DACA",
+      "innerStart": "#13293E",
+      "innerMid": "#0F1926",
+      "innerEnd": "#133238",
+      "userBubbleStart": "#15324D",
+      "userBubbleEnd": "#0F2438",
+      "userBubbleBorder": "#73DACA"
+    },
+    "typography": {
+      "uiFont": "",
+      "monoFont": "",
+      "chatFontSize": 0,
+      "codeFontSize": 0,
+      "lineHeight": 1.62
+    },
+    "userAvatar": "KEEP_EMBEDDED",
+    "agentAvatar": {
+      "image": "SVG_STAR",
+      "bgStops": [
+        "#E6F7F5",
+        "#CBECE8",
+        "#B4DFDA"
+      ],
+      "iconStops": [
+        "#1E7898",
+        "#185978",
+        "#0B354D"
+      ]
+    },
+    "dark": {
+      "chromeBg": "#0D1520",
+      "chromeFg": "#E1EEF4",
+      "primary": "#73DACA",
+      "accentBlue": "#7AA2F7",
+      "accentAqua": "#7DCFFF",
+      "accentGreen": "#9ECE6A",
+      "accentPink": "#F7768E",
+      "accentViolet": "#BB9AF7",
+      "accentOrange": "#FF9E64",
+      "text": "#E1EEF4",
+      "textMuted": "#B7CBD9",
+      "textSubtle": "#6E8599",
+      "surfaceBase": "#0F1926",
+      "sidebarBase": "#0B121C",
+      "overlayBase": "#101B29",
+      "scrimBase": "#091019",
+      "selection": "#1E425E"
+    },
+    "light": {
+      "chromeBg": "#DCECEF",
+      "chromeFg": "#243746",
+      "primary": "#1C6B78",
+      "text": "#243746",
+      "textMuted": "#516978",
+      "paper0": "#C5DDE2",
+      "paper1": "#D1E5E9",
+      "paper2": "#DCECEF",
+      "paper3": "#EDF6F8",
+      "surfaceBase": "#F3FAFB",
+      "sidebarBase": "#E3F0F3",
+      "overlayBase": "#EDF6F8",
+      "scrimBase": "#EDF6F8"
+    },
+    "loading": {
+      "title": "Antigravity",
+      "subtitle": "Ready for Midnight Aqua...",
+      "style": "kanagawa-wave",
+      "showEmblem": true,
+      "showProgress": true
+    },
+    "studio": {
+      "showTriggerPill": true,
+      "pillPosition": "bottom-right",
+      "language": "vi"
+    }
+  }
+}

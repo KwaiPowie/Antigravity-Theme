@@ -31,8 +31,91 @@ if (Test-Path $Backup) {
     Copy-Item $Backup $Asar -Force
     Remove-Item $Backup -Force -Confirm:$false
 }
+elseif (Test-Path $Asar) {
+    Write-Step "No backup found (app.asar.pixel-backup). Inspecting app.asar / Dang kiem tra app.asar..."
+    $Work = Join-Path $env:TEMP ('kanagawa-uninstall-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
+    $NewAsar = "$Asar.pixel-unpatch"
+    $UnpatchError = $null
+    try {
+        npx --yes @electron/asar extract $Asar $Work
+        if ($LASTEXITCODE -ne 0) { throw "asar extract failed (is Node.js installed?) / Loi giai nen asar." }
+
+        $UtilsPath = Join-Path $Work 'dist\utils.js'
+        $HandlersPath = Join-Path $Work 'dist\ipcHandlers.js'
+        $PackedInjector = Join-Path $Work 'dist\pixelTheme.js'
+        $Modified = $false
+
+        if (Test-Path $UtilsPath) {
+            $Utils = [System.IO.File]::ReadAllText($UtilsPath)
+            if ($Utils.Contains('pixelTheme')) {
+                Write-Step "Reverse-unpatching dist/utils.js / Dang go patch trong dist/utils.js..."
+                $Utils = [regex]::Replace($Utils, '\r?\n[ \t]*const pixelTheme_1 = require\(["'']\./pixelTheme["'']\);', '')
+                $Utils = $Utils.Replace('(0, pixelTheme_1.attachPixelLoadingOverlay)(win, foregroundColor, backgroundColor);', '(0, loadingOverlay_1.attachLoadingOverlay)(win, foregroundColor, backgroundColor);')
+                $Utils = [regex]::Replace($Utils, '[ \t]*\(0, pixelTheme_1\.attachPixelTheme\)\(win\);\r?\n', '')
+                $Utils = [regex]::Replace($Utils, 'const pixelChrome_1 = \(0, pixelTheme_1\.chromeColors\)\(isLight\);\r?\n[ \t]*const backgroundColor = pixelChrome_1\.background;', "const backgroundColor = isLight ? '#FAFAFA' : '#131313';")
+                $Utils = $Utils.Replace('const foregroundColor = pixelChrome_1.foreground;', "const foregroundColor = isLight ? '#383A42' : '#FAFAFA';")
+                $Utils = $Utils.Replace('titleBarOverlay: !(0, pixelTheme_1.wantsNativeCaption)() || isMacOS()', 'titleBarOverlay: isMacOS()')
+
+                if ($Utils.Contains('pixelTheme')) {
+                    throw "app.asar still contains unremovable pixelTheme references in dist/utils.js. Reinstall Antigravity to restore stock."
+                }
+                [System.IO.File]::WriteAllText($UtilsPath, $Utils, (New-Object System.Text.UTF8Encoding($false)))
+                $Modified = $true
+            }
+        }
+
+        if (Test-Path $HandlersPath) {
+            $Handlers = [System.IO.File]::ReadAllText($HandlersPath)
+            if ($Handlers.Contains('__pixelNoNativeCaption')) {
+                $Handlers = $Handlers.Replace("if (win && process.platform === 'win32' && !win.__pixelNoNativeCaption) {", "if (win && process.platform === 'win32') {")
+                if ($Handlers.Contains('__pixelNoNativeCaption')) {
+                    throw "app.asar still contains __pixelNoNativeCaption in dist/ipcHandlers.js."
+                }
+                [System.IO.File]::WriteAllText($HandlersPath, $Handlers, (New-Object System.Text.UTF8Encoding($false)))
+                $Modified = $true
+            }
+        }
+
+        if (Test-Path $PackedInjector) {
+            Remove-Item $PackedInjector -Force -Confirm:$false
+            $Modified = $true
+        }
+
+        if ($Modified) {
+            Write-Step "Repacking stock app.asar / Dang dong goi lai app.asar goc..."
+            npx --yes @electron/asar pack $Work $NewAsar
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path $NewAsar)) { throw "asar pack failed while reverse-unpatching app.asar." }
+            Move-Item $NewAsar $Asar -Force
+        }
+        else {
+            Write-Step "app.asar is already stock (no pixelTheme patch found). / app.asar da o trang thai mac dinh."
+        }
+    }
+    catch {
+        $UnpatchError = $_.Exception.Message
+    }
+    finally {
+        Remove-Item $Work -Recurse -Force -Confirm:$false -ErrorAction SilentlyContinue
+        if (Test-Path $NewAsar) {
+            Remove-Item $NewAsar -Force -Confirm:$false -ErrorAction SilentlyContinue
+        }
+    }
+    if ($UnpatchError) { Fail $UnpatchError }
+}
 else {
-    Write-Step "No backup found (app.asar.pixel-backup). Nothing to restore. / Khong co ban backup de khoi phuc."
+    Write-Step "app.asar not found at $Asar. / Khong tim thay app.asar."
+}
+
+$ActiveConfigPath = Join-Path $Resources 'active-theme.json'
+$ExtraThemeName = $null
+if (Test-Path $ActiveConfigPath) {
+    try {
+        $ac = Get-Content $ActiveConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($ac.theme -and $ac.theme -match '^[a-zA-Z0-9_-]+$' -and $ac.theme -ne 'kanagawa-theme' -and $ac.theme -ne 'app') {
+            $ExtraThemeName = $ac.theme
+        }
+    } catch {}
+    Remove-Item $ActiveConfigPath -Force -Confirm:$false
 }
 
 $ThemeDst = Join-Path $Resources 'kanagawa-theme'
@@ -40,10 +123,12 @@ if (Test-Path $ThemeDst) {
     Write-Step "Removing kanagawa-theme assets / Dang xoa thu muc kanagawa-theme..."
     Remove-Item $ThemeDst -Recurse -Force -Confirm:$false
 }
-
-$ActiveConfigPath = Join-Path $Resources 'active-theme.json'
-if (Test-Path $ActiveConfigPath) {
-    Remove-Item $ActiveConfigPath -Force -Confirm:$false
+if ($ExtraThemeName) {
+    $ExtraDst = Join-Path $Resources $ExtraThemeName
+    if (Test-Path $ExtraDst) {
+        Write-Step "Removing $ExtraThemeName assets / Dang xoa thu muc $ExtraThemeName..."
+        Remove-Item $ExtraDst -Recurse -Force -Confirm:$false
+    }
 }
 
 Write-Step "Done! Antigravity restored to stock. / Hoan tat! Antigravity da tro ve mac dinh."

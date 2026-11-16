@@ -1,0 +1,134 @@
+{
+  "id": "tokyo-night",
+  "name": "Tokyo Night",
+  "description": "Tokyo Night palette",
+  "builtIn": true,
+  "preserveWallpaper": true,
+  "preserveAvatars": true,
+  "updatedAt": "2026-11-15T18:13:01.081Z",
+  "config": {
+    "schemaVersion": 2,
+    "activeProfile": "tokyo-night",
+    "preset": "tokyo-night",
+    "wallpaper": "KEEP_EMBEDDED",
+    "wallpaperLight": "SAME",
+    "wallpaperPosition": "right top",
+    "wallpaperPositionLight": "SAME",
+    "wallpaperFit": "cover",
+    "wallpaperEffects": {
+      "blur": 0,
+      "brightness": 100,
+      "contrast": 100,
+      "saturate": 100,
+      "opacity": 100,
+      "scale": 100,
+      "scrimOpacity": 75,
+      "scrimStyle": "directional"
+    },
+    "surfaces": {
+      "sidebarOpacity": 64,
+      "panelOpacity": 42,
+      "chatOpacity": 66,
+      "userBubbleOpacity": 58,
+      "composerOpacity": 44,
+      "codeOpacity": 72,
+      "editorOpacity": 64,
+      "overlayOpacity": 96,
+      "titlebarOpacity": 74,
+      "glassBlur": 0,
+      "glassSaturate": 130,
+      "panelRadius": 14,
+      "cardRadius": 12,
+      "composerRadius": 16,
+      "bubbleRadius": 16
+    },
+    "avatars": {
+      "userVisible": true,
+      "userSize": 36,
+      "userRadius": 18,
+      "userRotate": 18,
+      "agentVisible": true,
+      "agentSize": 36,
+      "agentRadius": 18,
+      "agentRotate": -18
+    },
+    "composer": {
+      "rimStart": "#7AA2F7",
+      "rimMid": "#C0CAF5",
+      "rimEnd": "#BB9AF7",
+      "innerStart": "#1B2136",
+      "innerMid": "#161824",
+      "innerEnd": "#241E38",
+      "userBubbleStart": "#232B45",
+      "userBubbleEnd": "#191E30",
+      "userBubbleBorder": "#7AA2F7"
+    },
+    "typography": {
+      "uiFont": "",
+      "monoFont": "",
+      "chatFontSize": 0,
+      "codeFontSize": 0,
+      "lineHeight": 1.62
+    },
+    "userAvatar": "KEEP_EMBEDDED",
+    "agentAvatar": {
+      "image": "SVG_STAR",
+      "bgStops": [
+        "#EEF2FF",
+        "#DCE4FF",
+        "#C6D2FF"
+      ],
+      "iconStops": [
+        "#3D59A1",
+        "#7AA2F7",
+        "#1A1B26"
+      ]
+    },
+    "dark": {
+      "chromeBg": "#16161E",
+      "chromeFg": "#C0CAF5",
+      "primary": "#7AA2F7",
+      "accentBlue": "#7AA2F7",
+      "accentAqua": "#7DCFFF",
+      "accentGreen": "#9ECE6A",
+      "accentPink": "#F7768E",
+      "accentViolet": "#BB9AF7",
+      "accentOrange": "#FF9E64",
+      "text": "#C0CAF5",
+      "textMuted": "#A9B1D6",
+      "textSubtle": "#565F89",
+      "surfaceBase": "#1A1B26",
+      "sidebarBase": "#13141C",
+      "overlayBase": "#1D1F2C",
+      "scrimBase": "#101118",
+      "selection": "#283457"
+    },
+    "light": {
+      "chromeBg": "#D5D6DB",
+      "chromeFg": "#343B58",
+      "primary": "#34548A",
+      "text": "#343B58",
+      "textMuted": "#565A6E",
+      "paper0": "#C4C6CE",
+      "paper1": "#CFD1D8",
+      "paper2": "#D5D6DB",
+      "paper3": "#E6E7ED",
+      "surfaceBase": "#EDEFF5",
+      "sidebarBase": "#DFE1E8",
+      "overlayBase": "#E6E7ED",
+      "scrimBase": "#E6E7ED"
+    },
+    "loading": {
+      "title": "Antigravity",
+      "subtitle": "Ready for Tokyo Night...",
+      "style": "kanagawa-wave",
+      "showEmblem": true,
+      "showProgress": true
+    },
+    "studio": {
+      "showTriggerPill": true,
+      "pillPosition": "bottom-right",
+      "language": "vi"
+    }
+  }
+}

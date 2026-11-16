@@ -1,0 +1,134 @@
+{
+  "id": "my-current",
+  "name": "My Current Setup",
+  "description": "Your active wallpaper & theme setup",
+  "builtIn": false,
+  "updatedAt": "2026-11-15T18:13:01.085Z",
+  "config": {
+    "schemaVersion": 2,
+    "activeProfile": "my-current",
+    "preset": "kanagawa-wave",
+    "wallpaper": "library:wallpaper-aa54bc818c90.jpg",
+    "wallpaperLight": "SAME",
+    "wallpaperPosition": "right top",
+    "wallpaperPositionLight": "SAME",
+    "wallpaperFit": "cover",
+    "wallpaperEffects": {
+      "blur": 0,
+      "brightness": 100,
+      "contrast": 100,
+      "saturate": 100,
+      "opacity": 100,
+      "scale": 100,
+      "scrimOpacity": 75,
+      "scrimStyle": "directional"
+    },
+    "surfaces": {
+      "sidebarOpacity": 64,
+      "panelOpacity": 42,
+      "chatOpacity": 66,
+      "userBubbleOpacity": 58,
+      "composerOpacity": 44,
+      "codeOpacity": 72,
+      "editorOpacity": 64,
+      "overlayOpacity": 96,
+      "titlebarOpacity": 74,
+      "glassBlur": 0,
+      "glassSaturate": 130,
+      "panelRadius": 14,
+      "cardRadius": 12,
+      "composerRadius": 16,
+      "bubbleRadius": 16
+    },
+    "avatars": {
+      "userVisible": true,
+      "userSize": 36,
+      "userRadius": 18,
+      "userRotate": 18,
+      "agentVisible": true,
+      "agentSize": 36,
+      "agentRadius": 18,
+      "agentRotate": -18
+    },
+    "composer": {
+      "rimStart": "#7AA89F",
+      "rimMid": "#EAE6D3",
+      "rimEnd": "#E6C384",
+      "innerStart": "#1C3446",
+      "innerMid": "#121822",
+      "innerEnd": "#382E1E",
+      "userBubbleStart": "#1C344A",
+      "userBubbleEnd": "#16283A",
+      "userBubbleBorder": "#7AA89F"
+    },
+    "typography": {
+      "uiFont": "",
+      "monoFont": "",
+      "chatFontSize": 0,
+      "codeFontSize": 0,
+      "lineHeight": 1.62
+    },
+    "userAvatar": "library:user-avatar-63ef6d657929.webp",
+    "agentAvatar": {
+      "image": "library:user-avatar-63ef6d657929.webp",
+      "bgStops": [
+        "#FAF7E6",
+        "#F6ECC9",
+        "#EBE3CC"
+      ],
+      "iconStops": [
+        "#1F6E97",
+        "#285C84",
+        "#0E3252"
+      ]
+    },
+    "dark": {
+      "chromeBg": "#131720",
+      "chromeFg": "#EAE6D3",
+      "primary": "#E6C384",
+      "accentBlue": "#7E9CD8",
+      "accentAqua": "#7AA89F",
+      "accentGreen": "#98BB6C",
+      "accentPink": "#D27E99",
+      "accentViolet": "#957FB8",
+      "accentOrange": "#FFA066",
+      "text": "#EAE6D3",
+      "textMuted": "#CFC8A3",
+      "textSubtle": "#8A8980",
+      "surfaceBase": "#11161F",
+      "sidebarBase": "#0E121A",
+      "overlayBase": "#0F141D",
+      "scrimBase": "#0B0F17",
+      "selection": "#2D4F67"
+    },
+    "light": {
+      "chromeBg": "#E5DDB0",
+      "chromeFg": "#3E3E4C",
+      "primary": "#43436C",
+      "text": "#3E3E4C",
+      "textMuted": "#625F53",
+      "paper0": "#D5CEA3",
+      "paper1": "#DCD5AC",
+      "paper2": "#E5DDB0",
+      "paper3": "#F2ECBC",
+      "surfaceBase": "#F7F3D6",
+      "sidebarBase": "#EBE5C2",
+      "overlayBase": "#F2ECBC",
+      "scrimBase": "#F2ECBC"
+    },
+    "loading": {
+      "title": "Antigravity",
+      "subtitle": "Ready for Kanagawa Wave...",
+      "style": "kanagawa-wave",
+      "showEmblem": true,
+      "showProgress": true
+    },
+    "studio": {
+      "showTriggerPill": true,
+      "pillPosition": "bottom-right",
+      "language": "vi"
+    }
+  },
+  "preserveWallpaper": false,
+  "preserveAvatars": false
+}

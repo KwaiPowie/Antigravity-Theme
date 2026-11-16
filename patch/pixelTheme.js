@@ -63,15 +63,31 @@ function fontFaceCss(key) {
                 "@font-face{font-family:'" + f.family + "';font-style:normal;font-weight:400;" +
                 "font-display:optional;src:url(data:font/woff2;base64," + b64 + ") format('woff2');}\n";
         }
-        else {
-            console.error("[theme] font missing:", p);
-        }
     }
     catch (e) {
         console.error("[theme] font embed failed:", f.file, e);
     }
     fontCssCache.set(cacheKey, css);
     return css;
+}
+
+function hasThemeFonts() {
+    try {
+        const themeDir = getThemeDir();
+        return Object.values(FONTS).some((f) => fs.existsSync(path.join(themeDir, "fonts", f.file)));
+    }
+    catch (_) {
+        return false;
+    }
+}
+
+function hasStudioScript(themeDir) {
+    try {
+        return Boolean(themeDir && fs.existsSync(path.join(themeDir, "studio.js")));
+    }
+    catch (_) {
+        return false;
+    }
 }
 
 function buildFontCss() {
@@ -83,7 +99,7 @@ function buildFontCss() {
 // the chrome/native-caption lookups), each a full 120-180KB read; the
 // stat-sync costs microseconds and still picks up theme edits (any write
 // changes mtime), so the edit-then-Ctrl+R workflow is unaffected.
-const cssReadCache = { path: null, mtime: 0, size: 0, userMtime: 0, userSize: 0, css: null };
+const cssReadCache = { path: null, mtime: 0, size: 0, userMtime: 0, userSize: 0, customMtime: 0, customSize: 0, css: null };
 
 function readThemeCss() {
     try {
@@ -143,15 +159,37 @@ function readThemeCss() {
             } catch (e) {}
         }
 
+        const customCssPath = path.join(themeDir, "custom.css");
+        let customMtime = 0;
+        let customSize = 0;
+        if (fs.existsSync(customCssPath)) {
+            try {
+                const cst = fs.statSync(customCssPath);
+                customMtime = cst.mtimeMs;
+                customSize = cst.size;
+            } catch (e) {}
+        }
+
         if (cssReadCache.path === target &&
             cssReadCache.mtime === st.mtimeMs &&
             cssReadCache.size === st.size &&
             cssReadCache.userMtime === userMtime &&
-            cssReadCache.userSize === userSize) {
+            cssReadCache.userSize === userSize &&
+            cssReadCache.customMtime === customMtime &&
+            cssReadCache.customSize === customSize) {
             return cssReadCache.css;
         }
 
         let css = fs.readFileSync(target, "utf-8");
+        if (customMtime > 0) {
+            try {
+                const customText = fs.readFileSync(customCssPath, "utf-8").trim();
+                css = css.replace(/\n?\/\* === KANAGAWA-USER-CUSTOM-CSS-START === \*\/[\s\S]*?\/\* === KANAGAWA-USER-CUSTOM-CSS-END === \*\/\s*/g, "");
+                if (customText) {
+                    css = css.trimEnd() + "\n\n/* === KANAGAWA-USER-CUSTOM-CSS-START === */\n" + customText + "\n/* === KANAGAWA-USER-CUSTOM-CSS-END === */\n";
+                }
+            } catch (e) {}
+        }
         if (userMtime > 0) {
             try {
                 css += "\n/* [glass-user.css override] */\n" + fs.readFileSync(userCssPath, "utf-8");
@@ -163,6 +201,8 @@ function readThemeCss() {
         cssReadCache.size = st.size;
         cssReadCache.userMtime = userMtime;
         cssReadCache.userSize = userSize;
+        cssReadCache.customMtime = customMtime;
+        cssReadCache.customSize = customSize;
         cssReadCache.css = css;
         return css;
     }
@@ -398,12 +438,14 @@ const FONT_PREWARM_JS = `(() => {
         const warm = document.createElement('div');
         warm.setAttribute('aria-hidden', 'true');
         warm.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;z-index:-1;contain:strict;';
-        // 键盘字符全谱预热。注意：字符集里不能出现反引号字符本身 ——
-        // 本文件用模板字面量定义这段脚本，字符串里混进一个反引号
-        // 字符就会把模板提前截断（历史上真的踩过，整个文件因此无法
-        // 被 node 解析，重新打包即失效）。它只是一个预热字形，删掉
-        // 不影响任何行为。
-        warm.innerHTML = '<span style="font-family:\\'Fusion Pixel 12px Proportional SC\\'">ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~!@#$%^&*()_+-={}|[]\\\\:";\\'<>?,./一二三四五六七八九十百千万亿的基本设置模型通用应用外观浏览器项目会话解析取消确定保存</span><span style="font-family:\\'Fusion Pixel 12px Monospaced SC\\'">ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789</span>';
+        const s1 = document.createElement('span');
+        s1.style.fontFamily = "'Fusion Pixel 12px Proportional SC'";
+        s1.textContent = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~!@#$%^&*()_+-={}|[]\\\\:";\\\'<>?,./一二三四五六七八九十百千万亿的基本设置模型通用应用外观浏览器项目会话解析取消确定保存';
+        const s2 = document.createElement('span');
+        s2.style.fontFamily = "'Fusion Pixel 12px Monospaced SC'";
+        s2.textContent = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        warm.appendChild(s1);
+        warm.appendChild(s2);
         (document.body || document.documentElement).appendChild(warm);
         requestAnimationFrame(() => {
           try { warm.remove(); } catch (e) {}
@@ -592,6 +634,21 @@ const SEND_PULSE_JS = `(() => {
     } catch (e) { /* never interfere with the app's own handling */ }
   }, { capture: true, passive: true });
 
+  const hasOpenPopup = (target) => {
+    try {
+      if (target && (target.getAttribute('aria-expanded') === 'true' || target.hasAttribute('aria-activedescendant'))) {
+        return true;
+      }
+      const menus = document.querySelectorAll('[data-mention-menu], #typeahead-menu, [role="listbox"], [role="menu"]');
+      for (const m of menus) {
+        if (!m || !m.isConnected || m.childElementCount === 0) continue;
+        const r = m.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) return true;
+      }
+    } catch (e) {}
+    return false;
+  };
+
   // Enter in the composer covers keyboard sends. Shift+Enter is a newline,
   // and IME composition must be left alone or every Chinese/Japanese word
   // confirmed with Enter would fire the animation.
@@ -601,6 +658,7 @@ const SEND_PULSE_JS = `(() => {
       const t = ev.target;
       if (!t || !t.closest) return;
       if (!t.closest('[contenteditable="true"], textarea')) return;
+      if (hasOpenPopup(t)) return;
       pulse();
     } catch (e) { /* same */ }
   }, { capture: true, passive: true });
@@ -764,8 +822,8 @@ const STREAM_WATCH_JS = `(() => {
   // 哪个组件事后抹掉标签，代价只是那一个条目失去悬停配色，可接受。
   const MENU_ITEM_SEL = '[role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [data-testid="title-menu-bar-option"]';
   const FAMILY_SEL = '[role="option"], [id*="typeahead-item"], [class*="select-item"], [data-radix-collection-item]';
-  const LISTBOX_CTX = '[role="listbox"], [role="combobox"], [data-radix-popper-content-wrapper"]';
-  const PANEL_SEL = '[data-radix-menu-content], .monaco-menu-container, div.border-menu-border';
+  const LISTBOX_CTX = '[role="listbox"], [role="combobox"], [data-radix-popper-content-wrapper], [data-mention-menu]';
+  const PANEL_SEL = '[data-radix-menu-content], .monaco-menu-container, div.border-menu-border, [data-mention-menu]';
 
   const tagEl = (el) => {
     try {
@@ -775,10 +833,17 @@ const STREAM_WATCH_JS = `(() => {
       if ((el.getAttribute('role') === 'option' || el.id.indexOf('typeahead-item') !== -1 || cls.indexOf('select-item') !== -1) && el.closest(LISTBOX_CTX)) el.classList.add('px-listbox-item');
       if (el.matches(PANEL_SEL) || (el.parentElement && el.parentElement.hasAttribute && el.parentElement.hasAttribute('data-radix-popper-content-wrapper'))) el.classList.add('px-menu-content');
       const role = el.getAttribute('role');
-      // 面板可能在挂载瞬间还是空的（React 分批填内容），所以这里不看
-      // childElementCount：空面板打标无害（不可见），漏打才是回归。
-      if (role === 'menu' || role === 'listbox') el.classList.add('px-menu-content');
+      // Skip tagging empty #typeahead-menu placeholder on document.body; tag real portals & menus.
+      if (role === 'menu' || (role === 'listbox' && (el.id !== 'typeahead-menu' || el.childElementCount > 0))) {
+        el.classList.add('px-menu-content');
+      }
       if (el.tagName === 'DIV' && el.closest('[data-testid="title-menu-bar"]') && (cls.indexOf('z-[8000]') !== -1 || cls.indexOf('min-w-') !== -1)) el.classList.add('px-menu-content');
+      if (el.getAttribute('data-testid') === 'user-message-bubble') {
+        const frame = (el.closest && el.closest('[class*="bg-card-border"]')) || el.parentElement;
+        if (frame && frame.classList && !frame.classList.contains('agy-user-bubble-frame')) {
+          frame.classList.add('agy-user-bubble-frame');
+        }
+      }
     } catch (e) { /* must never break the observer */ }
   };
   const tagTree = (root) => {
@@ -791,7 +856,7 @@ const STREAM_WATCH_JS = `(() => {
       const all = root.querySelectorAll(
         MENU_ITEM_SEL + ', ' + FAMILY_SEL + ', ' + PANEL_SEL +
         ', [data-radix-popper-content-wrapper], [data-radix-popper-content-wrapper] > *' +
-        ', [role="menu"], [role="listbox"]' +
+        ', [role="menu"], [role="listbox"], [data-mention-menu], [data-testid="user-message-bubble"]' +
         ', [data-testid="title-menu-bar"] div[class*="z-[8000]"], [data-testid="title-menu-bar"] div[class*="min-w-"]');
       for (const el of all) tagEl(el);
     } catch (e) { /* same */ }
@@ -799,6 +864,7 @@ const STREAM_WATCH_JS = `(() => {
   const tagMutations = (muts) => {
     for (const m of muts) {
       if (m.type !== 'childList') continue;
+      if (m.target && m.target.id === 'typeahead-menu') tagEl(m.target);
       for (const n of m.addedNodes) tagTree(n);
     }
   };
@@ -1432,9 +1498,25 @@ const SETTINGS_MODAL_JS = `(() => {
 
   let isClosing = false;
 
+  const hasBlockingPopup = () => {
+    try {
+      const popups = document.querySelectorAll('[data-mention-menu], #typeahead-menu, [role="listbox"], [role="menu"]');
+      for (const p of popups) {
+        if (!p || !p.isConnected || p.childElementCount === 0) continue;
+        const r = p.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) return true;
+      }
+      const studioHost = document.getElementById('kn-studio-host');
+      if (studioHost && studioHost.shadowRoot && studioHost.shadowRoot.querySelector('.panel.open')) {
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  };
+
   const performGracefulClose = (unmountAction) => {
     if (isClosing) return;
-    const container = document.querySelector('.settings-modal-container') || document.querySelector('[role="dialog"]');
+    const container = document.querySelector('.settings-modal-container');
     if (!container) {
       unmountAction();
       return;
@@ -1444,7 +1526,7 @@ const SETTINGS_MODAL_JS = `(() => {
     document.documentElement.classList.add('px-modal-closing');
     container.classList.add('settings-modal-closing');
 
-    const backdrop = document.querySelector('.settings-modal-backdrop') || document.querySelector('div.animate-modalFadeIn') || container.parentElement;
+    const backdrop = document.querySelector('.settings-modal-backdrop') || (container.parentElement && container.parentElement.classList.contains('animate-modalFadeIn') ? container.parentElement : null);
     if (backdrop) backdrop.classList.add('settings-modal-closing');
 
     setTimeout(() => {
@@ -1454,10 +1536,10 @@ const SETTINGS_MODAL_JS = `(() => {
         console.error('[pixel-theme] modal exit unmountAction failed:', err);
       }
 
-      // Keep html.px-modal-closing until React completely removes the dialog from DOM
+      // Keep html.px-modal-closing until React completely removes the settings modal from DOM
       const pollStart = Date.now();
       const pollUnmount = () => {
-        if (!document.querySelector('.settings-modal-container') && !document.querySelector('[role="dialog"]')) {
+        if (!document.querySelector('.settings-modal-container')) {
           document.documentElement.classList.remove('px-modal-closing');
           isClosing = false;
         } else if (Date.now() - pollStart > 1200) {
@@ -1480,14 +1562,12 @@ const SETTINGS_MODAL_JS = `(() => {
     const closeBtn = target.closest && target.closest(
       '.settings-modal-container button[aria-label="关闭"], ' +
       '.settings-modal-container button[aria-label="Close"], ' +
-      '.settings-modal-container button.top-4.right-4, ' +
-      '[role="dialog"] button[aria-label="关闭"], ' +
-      '[role="dialog"] button[aria-label="Close"], ' +
-      '[role="dialog"] button.top-4.right-4'
+      '.settings-modal-container button.top-4.right-4'
     );
 
-    const backdrop = document.querySelector('.settings-modal-backdrop') || document.querySelector('div.animate-modalFadeIn');
-    const isBackdrop = target === backdrop;
+    const container = document.querySelector('.settings-modal-container');
+    const backdrop = document.querySelector('.settings-modal-backdrop') || (container && container.parentElement && container.parentElement.classList.contains('animate-modalFadeIn') ? container.parentElement : null);
+    const isBackdrop = backdrop && target === backdrop;
 
     if (closeBtn) {
       e.preventDefault();
@@ -1505,24 +1585,21 @@ const SETTINGS_MODAL_JS = `(() => {
   }, true);
 
   document.addEventListener('keydown', (e) => {
-    if (isClosing) return;
+    if (isClosing || e.defaultPrevented) return;
     if (e.key === 'Escape' || e.code === 'Escape') {
-      const container = document.querySelector('.settings-modal-container') || document.querySelector('[role="dialog"]');
+      if (hasBlockingPopup()) return;
+      const container = document.querySelector('.settings-modal-container');
       if (!container) return;
 
       const closeBtn = container.querySelector && container.querySelector(
         'button[aria-label="关闭"], button[aria-label="Close"], button.top-4.right-4'
       );
+      if (!closeBtn) return;
 
       e.preventDefault();
       e.stopPropagation();
       performGracefulClose(() => {
-        if (closeBtn) {
-          closeBtn.click();
-        } else {
-          const evt = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true });
-          document.dispatchEvent(evt);
-        }
+        closeBtn.click();
       });
     }
   }, true);
@@ -3084,6 +3161,671 @@ const GLASS_QUALITY_JS = `(() => {
   return 'installed';
 })()`;
 
+// ---------------------------------------------------------------------------
+// Theme Studio, live CSS hot-watch & repo mirror bridge (zero-reload UX)
+// ---------------------------------------------------------------------------
+const activeThemeWindows = new Map();
+const studioUploadChunks = new Map();
+let themeDirWatcher = null;
+let watchedThemeDir = null;
+let themeReloadDebounce = null;
+let suppressWatchUntil = 0;
+let cachedBuilder = { path: null, mtime: 0, mod: null };
+let cachedStudioJs = { path: null, mtime: 0, size: 0, code: "" };
+
+function extractConsoleMessageText(args) {
+    for (const a of args) {
+        if (typeof a === "string") return a;
+        if (a && typeof a === "object" && typeof a.message === "string") return a.message;
+    }
+    return "";
+}
+
+function getThemeBuilder(themeDir) {
+    const builderPath = path.join(themeDir, "theme-builder.js");
+    if (!fs.existsSync(builderPath)) return null;
+    const st = fs.statSync(builderPath);
+    if (cachedBuilder.path === builderPath && cachedBuilder.mtime === st.mtimeMs && cachedBuilder.mod) {
+        return cachedBuilder.mod;
+    }
+    try {
+        const resolved = require.resolve(builderPath);
+        delete require.cache[resolved];
+    } catch (_) {}
+    const mod = require(builderPath);
+    cachedBuilder = { path: builderPath, mtime: st.mtimeMs, mod };
+    return mod;
+}
+
+function loadStudioScript(themeDir) {
+    try {
+        const studioPath = path.join(themeDir, "studio.js");
+        if (!fs.existsSync(studioPath)) return "";
+        const st = fs.statSync(studioPath);
+        if (cachedStudioJs.path === studioPath && cachedStudioJs.mtime === st.mtimeMs && cachedStudioJs.size === st.size) {
+            return cachedStudioJs.code;
+        }
+        const code = fs.readFileSync(studioPath, "utf-8");
+        cachedStudioJs = { path: studioPath, mtime: st.mtimeMs, size: st.size, code };
+        return code;
+    } catch (e) {
+        console.error("[pixel-theme] failed to load studio.js:", e);
+        return "";
+    }
+}
+
+function readRepoLink(themeDir) {
+    try {
+        const linkPath = path.join(themeDir, "repo-link.json");
+        if (!fs.existsSync(linkPath)) return null;
+        const data = JSON.parse(fs.readFileSync(linkPath, "utf-8"));
+        const repoThemeDir = data && data.themeDir ? path.resolve(data.themeDir) : "";
+        if (!repoThemeDir || repoThemeDir === path.resolve(themeDir)) return null;
+        if (!fs.existsSync(repoThemeDir) || !fs.existsSync(path.join(repoThemeDir, "theme-builder.js"))) return null;
+        return repoThemeDir;
+    } catch (_) {
+        return null;
+    }
+}
+
+function mirrorToRepo(themeDir, relFiles = [], deletedRelFiles = []) {
+    try {
+        const repoThemeDir = readRepoLink(themeDir);
+        if (!repoThemeDir) return;
+        for (const rel of relFiles) {
+            if (!rel) continue;
+            const src = path.join(themeDir, rel);
+            const dst = path.join(repoThemeDir, rel);
+            if (!fs.existsSync(src)) continue;
+            fs.mkdirSync(path.dirname(dst), { recursive: true });
+            fs.copyFileSync(src, dst);
+        }
+        for (const rel of deletedRelFiles) {
+            if (!rel) continue;
+            const dst = path.join(repoThemeDir, rel);
+            if (fs.existsSync(dst)) {
+                try { fs.unlinkSync(dst); } catch (_) {}
+            }
+        }
+    } catch (e) {
+        console.error("[kanagawa-studio] repo mirror failed:", e);
+    }
+}
+
+function writeLiveWatchMarker(themeDir) {
+    try {
+        const markerPath = path.join(themeDir, ".live-watch.json");
+        fs.writeFileSync(
+            markerPath,
+            JSON.stringify({ pid: process.pid, version: 2, updatedAt: new Date().toISOString() }, null, 2),
+            "utf-8"
+        );
+    } catch (_) {}
+}
+
+async function broadcastThemeCssRefresh() {
+    cssReadCache.path = null;
+    const css = buildCss();
+    if (!css) return;
+    const tasks = [];
+    for (const entry of activeThemeWindows.values()) {
+        if (!entry || entry.win.isDestroyed() || entry.wc.isDestroyed()) continue;
+        try { syncTitleBarOverlay(entry.win); } catch (_) {}
+        tasks.push(Promise.resolve(entry.applyCss(css)));
+    }
+    if (tasks.length > 0) {
+        await Promise.all(tasks);
+    }
+}
+
+function broadcastStudioReinject() {
+    const themeDir = getThemeDir();
+    const code = loadStudioScript(themeDir);
+    if (!code) return;
+    for (const entry of activeThemeWindows.values()) {
+        if (!entry || entry.win.isDestroyed() || entry.wc.isDestroyed()) continue;
+        if (!/^https?:/i.test(entry.wc.getURL())) continue;
+        entry.wc.executeJavaScript("window.__knStudio && window.__knStudio.stop && window.__knStudio.stop();", true)
+            .catch(() => {})
+            .then(() => entry.wc.executeJavaScript(code, true))
+            .catch(() => {});
+    }
+}
+
+const MAX_UPLOAD_DATAURL_CHARS = 22 * 1024 * 1024;
+const MAX_UPLOAD_CHUNKS = 512;
+
+function markInternalWrite(ms = 900) {
+    suppressWatchUntil = Math.max(suppressWatchUntil, Date.now() + ms);
+}
+
+function broadcastStudioState(sourceWc, data, external = false) {
+    const payloadJson = JSON.stringify({ event: "state-updated", external: Boolean(external), data })
+        .replace(/\u2028/g, "\\u2028")
+        .replace(/\u2029/g, "\\u2029");
+    const script = "window.__knStudioReceive && window.__knStudioReceive(" + payloadJson + ")";
+    for (const entry of activeThemeWindows.values()) {
+        if (!entry || (sourceWc && entry.wc === sourceWc) || entry.win.isDestroyed() || entry.wc.isDestroyed()) continue;
+        if (!/^https?:/i.test(entry.wc.getURL())) continue;
+        entry.wc.executeJavaScript(script, true).catch(() => {});
+    }
+}
+
+function ensureThemeDirWatch(themeDir) {
+    if (!themeDir || !fs.existsSync(themeDir)) return;
+    writeLiveWatchMarker(themeDir);
+    if (watchedThemeDir === themeDir && themeDirWatcher) return;
+    if (themeDirWatcher) {
+        try { themeDirWatcher.close(); } catch (_) {}
+        themeDirWatcher = null;
+    }
+    watchedThemeDir = themeDir;
+    try {
+        let studioChanged = false;
+        let cssChanged = false;
+        let stateChanged = false;
+        const onWatchEvent = (_eventType, filename) => {
+            if (Date.now() < suppressWatchUntil) return;
+            const norm = String(filename || "").replace(/\\/g, "/").toLowerCase();
+            if (!norm) return;
+            const base = path.posix.basename(norm);
+            if (!base || base === ".live-watch.json" || base === "repo-link.json" || base.endsWith(".tmp") || base.endsWith(".bak")) return;
+            if (norm === "studio.js") studioChanged = true;
+            else if (norm === "custom.css") { cssChanged = true; stateChanged = true; }
+            else if (norm.endsWith(".css")) cssChanged = true;
+            else if (norm === "kanagawa.config.json" || norm.startsWith("profiles/") || norm.startsWith("assets/library/")) stateChanged = true;
+            else return;
+            clearTimeout(themeReloadDebounce);
+            themeReloadDebounce = setTimeout(async () => {
+                if (Date.now() < suppressWatchUntil) {
+                    cssChanged = false;
+                    studioChanged = false;
+                    stateChanged = false;
+                    return;
+                }
+                const needCss = cssChanged;
+                const needStudio = studioChanged;
+                const needState = stateChanged;
+                cssChanged = false;
+                studioChanged = false;
+                stateChanged = false;
+                if (needCss) await broadcastThemeCssRefresh();
+                if (needStudio) broadcastStudioReinject();
+                if (needState) {
+                    try {
+                        const builder = getThemeBuilder(themeDir);
+                        if (builder) {
+                            const stateData = buildStudioState(themeDir, builder);
+                            broadcastStudioState(null, stateData, true);
+                        }
+                    } catch (err) {
+                        console.error("[kanagawa-studio] external watch state sync failed:", err);
+                    }
+                }
+            }, 200);
+        };
+        try {
+            themeDirWatcher = fs.watch(themeDir, { persistent: false, recursive: true }, onWatchEvent);
+        } catch (_) {
+            themeDirWatcher = fs.watch(themeDir, { persistent: false }, onWatchEvent);
+        }
+    } catch (e) {
+        console.error("[pixel-theme] theme dir watch failed:", e);
+    }
+}
+
+function makeStudioThumb(themeDir, builder, id) {
+    try {
+        const filename = String(id || "").replace(/^library:/, "").replace(/[\\/]/g, "");
+        if (!filename) return "";
+        const fullPath = path.join(themeDir, "assets", "library", filename);
+        if (!fs.existsSync(fullPath)) return "";
+        try {
+            const img = electron_1.nativeImage.createFromPath(fullPath);
+            if (img && !img.isEmpty()) {
+                return img.resize({ width: 160, quality: "good" }).toDataURL();
+            }
+        } catch (_) {}
+        const ext = path.extname(fullPath).toLowerCase();
+        const mime = (builder && builder.MIME_MAP && builder.MIME_MAP[ext]) || "";
+        if (!mime) return "";
+        const st = fs.statSync(fullPath);
+        if (st.size > 6 * 1024 * 1024) return "";
+        return "data:" + mime + ";base64," + fs.readFileSync(fullPath).toString("base64");
+    } catch (_) {
+        return "";
+    }
+}
+
+function readCurrentThemeConfig(themeDir, builder) {
+    const configPath = path.join(themeDir, "kanagawa.config.json");
+    let raw = {};
+    if (fs.existsSync(configPath)) {
+        try { raw = JSON.parse(fs.readFileSync(configPath, "utf-8")); } catch (_) {}
+    }
+    return builder.mergeConfig(raw);
+}
+
+function buildStudioState(themeDir, builder, extraThumbs) {
+    builder.ensureCustomCssFile(themeDir);
+    if (builder.listLibraryAssets(themeDir).length === 0) {
+        const cssPath = path.join(themeDir, "kanagawa.css");
+        if (fs.existsSync(cssPath)) {
+            try { builder.seedLibraryFromCss(themeDir, fs.readFileSync(cssPath, "utf-8")); } catch (_) {}
+        }
+    }
+    const config = readCurrentThemeConfig(themeDir, builder);
+    builder.ensureDefaultProfiles(themeDir, config);
+    const profiles = builder.listProfiles(themeDir);
+    const library = builder.listLibraryAssets(themeDir);
+    const customCss = builder.readCustomCss(themeDir, true);
+    const out = { config, profiles, library, customCss };
+    if (extraThumbs) out.thumbs = extraThumbs;
+    return out;
+}
+
+function assignImageTarget(cfg, target, libRef) {
+    if (target === "wallpaper") cfg.wallpaper = libRef;
+    else if (target === "wallpaperLight") cfg.wallpaperLight = libRef;
+    else if (target === "userAvatar") {
+        cfg.userAvatar = libRef;
+        cfg.avatars.userVisible = true;
+    } else if (target === "agentAvatar") {
+        cfg.agentAvatar.image = libRef;
+        cfg.avatars.agentVisible = true;
+    }
+}
+
+async function handleStudioMessage(win, wc, rawMsg) {
+    let parsed;
+    try {
+        parsed = JSON.parse(rawMsg.slice("__KN_STUDIO__".length));
+    } catch (e) {
+        return;
+    }
+    const { id, action } = parsed;
+    const reply = (ok, dataOrErr) => {
+        if (wc.isDestroyed()) return;
+        const body = ok ? { id, ok: true, data: dataOrErr } : { id, ok: false, error: String(dataOrErr || "Error") };
+        const serialized = JSON.stringify(body).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+        wc.executeJavaScript("window.__knStudioReceive && window.__knStudioReceive(" + serialized + ")", true).catch(() => {});
+    };
+
+    try {
+        const themeDir = getThemeDir();
+        const builder = getThemeBuilder(themeDir);
+        if (!builder) {
+            reply(false, "theme-builder.js not found in " + themeDir);
+            return;
+        }
+
+        if (action === "get-state") {
+            const stateData = buildStudioState(themeDir, builder);
+            reply(true, stateData);
+            return;
+        }
+
+        if (action === "get-library-thumbs") {
+            const ids = Array.isArray(parsed.ids) ? parsed.ids.slice(0, 80) : [];
+            const thumbs = {};
+            for (const itemId of ids) {
+                const url = makeStudioThumb(themeDir, builder, itemId);
+                if (url) thumbs[itemId] = url;
+            }
+            reply(true, { thumbs });
+            return;
+        }
+
+        if (action === "apply-config") {
+            markInternalWrite();
+            const res = builder.applyThemeConfig(themeDir, parsed.config || readCurrentThemeConfig(themeDir, builder));
+            await broadcastThemeCssRefresh();
+            mirrorToRepo(themeDir, ["kanagawa.config.json", "kanagawa.css", "loading.html", "custom.css"]);
+            markInternalWrite();
+            const stateData = {
+                config: res.cfg,
+                profiles: builder.listProfiles(themeDir),
+                library: builder.listLibraryAssets(themeDir),
+                customCss: builder.readCustomCss(themeDir, true),
+            };
+            reply(true, stateData);
+            broadcastStudioState(wc, stateData, false);
+            return;
+        }
+
+        if (action === "apply-preset-colors") {
+            markInternalWrite();
+            const baseCfg = parsed.config || readCurrentThemeConfig(themeDir, builder);
+            const nextCfg = builder.applyPresetToConfig(baseCfg, parsed.presetId);
+            const res = builder.applyThemeConfig(themeDir, nextCfg);
+            await broadcastThemeCssRefresh();
+            mirrorToRepo(themeDir, ["kanagawa.config.json", "kanagawa.css", "loading.html", "custom.css"]);
+            markInternalWrite();
+            const stateData = {
+                config: res.cfg,
+                profiles: builder.listProfiles(themeDir),
+                library: builder.listLibraryAssets(themeDir),
+                customCss: builder.readCustomCss(themeDir, true),
+            };
+            reply(true, stateData);
+            broadcastStudioState(wc, stateData, false);
+            return;
+        }
+
+        if (action === "pick-image") {
+            const target = String(parsed.target || "wallpaper");
+            const parentWin = win && !win.isDestroyed() ? win : undefined;
+            const picked = await electron_1.dialog.showOpenDialog(parentWin, {
+                title: "Chọn ảnh cho Kanagawa Studio",
+                properties: ["openFile"],
+                filters: [
+                    { name: "Images", extensions: ["png", "jpg", "jpeg", "webp", "avif", "gif", "svg", "bmp"] },
+                    { name: "All files", extensions: ["*"] },
+                ],
+            });
+            if (picked.canceled || !picked.filePaths || !picked.filePaths[0]) {
+                reply(true, { canceled: true });
+                return;
+            }
+            const prefix = target === "wallpaperLight" ? "wp-light" : target === "userAvatar" ? "user" : target === "agentAvatar" ? "agent" : "wp";
+            markInternalWrite();
+            const libRef = builder.importAssetToLibrary(themeDir, picked.filePaths[0], prefix);
+            const baseCfg = (parsed.config && typeof parsed.config === "object" && !Array.isArray(parsed.config))
+                ? builder.mergeConfig(parsed.config)
+                : readCurrentThemeConfig(themeDir, builder);
+            assignImageTarget(baseCfg, target, libRef);
+            const res = builder.applyThemeConfig(themeDir, baseCfg);
+            await broadcastThemeCssRefresh();
+            const libFile = libRef.replace(/^library:/, "");
+            mirrorToRepo(themeDir, [
+                "kanagawa.config.json",
+                "kanagawa.css",
+                "loading.html",
+                "custom.css",
+                path.join("assets", "library", libFile),
+            ]);
+            markInternalWrite();
+            const thumb = makeStudioThumb(themeDir, builder, libRef);
+            const stateData = {
+                canceled: false,
+                config: res.cfg,
+                profiles: builder.listProfiles(themeDir),
+                library: builder.listLibraryAssets(themeDir),
+                customCss: builder.readCustomCss(themeDir, true),
+                thumbs: thumb ? { [libRef]: thumb } : {},
+            };
+            reply(true, stateData);
+            broadcastStudioState(wc, stateData, false);
+            return;
+        }
+
+        if (action === "upload-chunk") {
+            const { uploadId, filename, target, index, total, data } = parsed;
+            if (typeof uploadId !== "string" || !uploadId || uploadId.length > 128 ||
+                typeof data !== "string" ||
+                !Number.isInteger(total) || total < 1 || total > MAX_UPLOAD_CHUNKS ||
+                !Number.isInteger(index) || index < 0 || index >= total ||
+                data.length > MAX_UPLOAD_DATAURL_CHARS) {
+                reply(false, "Invalid upload chunk payload");
+                return;
+            }
+            let entry = studioUploadChunks.get(uploadId);
+            if (!entry) {
+                entry = {
+                    wcId: wc.id,
+                    filename: String(filename || "drop.png"),
+                    target: String(target || "wallpaper"),
+                    total,
+                    chunks: new Array(total),
+                    chunkSizes: new Array(total).fill(0),
+                    totalChars: 0,
+                    received: 0,
+                    baseConfig: (parsed.config && typeof parsed.config === "object" && !Array.isArray(parsed.config)) ? parsed.config : null,
+                    timer: null,
+                };
+                studioUploadChunks.set(uploadId, entry);
+            } else if (entry.total !== total || entry.wcId !== wc.id) {
+                reply(false, "Mismatched upload chunk session");
+                return;
+            } else if (parsed.config && typeof parsed.config === "object" && !Array.isArray(parsed.config)) {
+                entry.baseConfig = parsed.config;
+            }
+            if (entry.timer) clearTimeout(entry.timer);
+            entry.timer = setTimeout(() => studioUploadChunks.delete(uploadId), 60000);
+            const nextTotalChars = entry.totalChars - entry.chunkSizes[index] + data.length;
+            if (nextTotalChars > MAX_UPLOAD_DATAURL_CHARS) {
+                clearTimeout(entry.timer);
+                studioUploadChunks.delete(uploadId);
+                reply(false, "Upload exceeds 15 MB limit");
+                return;
+            }
+            if (entry.chunks[index] === undefined) entry.received++;
+            entry.totalChars = nextTotalChars;
+            entry.chunkSizes[index] = data.length;
+            entry.chunks[index] = data;
+            if (entry.received < entry.total) {
+                reply(true, { complete: false, received: entry.received, total: entry.total });
+                return;
+            }
+            clearTimeout(entry.timer);
+            studioUploadChunks.delete(uploadId);
+            const fullDataUrl = entry.chunks.join("");
+            if (!/^data:image\//i.test(fullDataUrl)) {
+                reply(false, "Only image data URLs are supported");
+                return;
+            }
+            markInternalWrite();
+            const libRef = builder.saveDataUrlToLibrary(themeDir, fullDataUrl, entry.filename);
+            const baseCfg = entry.baseConfig
+                ? builder.mergeConfig(entry.baseConfig)
+                : readCurrentThemeConfig(themeDir, builder);
+            assignImageTarget(baseCfg, entry.target, libRef);
+            const res = builder.applyThemeConfig(themeDir, baseCfg);
+            await broadcastThemeCssRefresh();
+            const libFile = libRef.replace(/^library:/, "");
+            mirrorToRepo(themeDir, [
+                "kanagawa.config.json",
+                "kanagawa.css",
+                "loading.html",
+                "custom.css",
+                path.join("assets", "library", libFile),
+            ]);
+            markInternalWrite();
+            const thumb = makeStudioThumb(themeDir, builder, libRef);
+            const stateData = {
+                complete: true,
+                config: res.cfg,
+                profiles: builder.listProfiles(themeDir),
+                library: builder.listLibraryAssets(themeDir),
+                customCss: builder.readCustomCss(themeDir, true),
+                thumbs: thumb ? { [libRef]: thumb } : {},
+            };
+            reply(true, stateData);
+            broadcastStudioState(wc, stateData, false);
+            return;
+        }
+
+        if (action === "delete-library-asset") {
+            const assetId = String(parsed.assetId || "");
+            const filename = assetId.replace(/^library:/, "").replace(/[\\/]/g, "");
+            markInternalWrite();
+            builder.deleteLibraryAsset(themeDir, assetId);
+            const cfg = (parsed.config && typeof parsed.config === "object" && !Array.isArray(parsed.config))
+                ? builder.mergeConfig(parsed.config)
+                : readCurrentThemeConfig(themeDir, builder);
+            let cfgChanged = false;
+            if (cfg.wallpaper === assetId) { cfg.wallpaper = "NONE"; cfgChanged = true; }
+            if (cfg.wallpaperLight === assetId) { cfg.wallpaperLight = "SAME"; cfgChanged = true; }
+            if (cfg.userAvatar === assetId) {
+                cfg.userAvatar = "NONE";
+                if (cfg.avatars) cfg.avatars.userVisible = false;
+                cfgChanged = true;
+            }
+            if (cfg.agentAvatar && cfg.agentAvatar.image === assetId) {
+                cfg.agentAvatar.image = "NONE";
+                if (cfg.avatars) cfg.avatars.agentVisible = false;
+                cfgChanged = true;
+            }
+            let appliedCfg = cfg;
+            if (cfgChanged) {
+                const res = builder.applyThemeConfig(themeDir, cfg);
+                appliedCfg = res.cfg;
+                await broadcastThemeCssRefresh();
+            }
+            mirrorToRepo(
+                themeDir,
+                cfgChanged ? ["kanagawa.config.json", "kanagawa.css", "loading.html", "custom.css"] : [],
+                filename ? [path.join("assets", "library", filename)] : []
+            );
+            markInternalWrite();
+            const stateData = {
+                config: appliedCfg,
+                library: builder.listLibraryAssets(themeDir),
+                profiles: builder.listProfiles(themeDir),
+                customCss: builder.readCustomCss(themeDir, true),
+            };
+            reply(true, stateData);
+            broadcastStudioState(wc, stateData, false);
+            return;
+        }
+
+        if (action === "load-profile") {
+            markInternalWrite();
+            const baseCfg = (parsed.config && typeof parsed.config === "object" && !Array.isArray(parsed.config))
+                ? builder.mergeConfig(parsed.config)
+                : readCurrentThemeConfig(themeDir, builder);
+            const loaded = builder.loadProfile(themeDir, parsed.profileId, baseCfg);
+            const res = builder.applyThemeConfig(themeDir, loaded.config);
+            await broadcastThemeCssRefresh();
+            mirrorToRepo(themeDir, ["kanagawa.config.json", "kanagawa.css", "loading.html", "custom.css"]);
+            markInternalWrite();
+            const stateData = {
+                config: res.cfg,
+                profiles: builder.listProfiles(themeDir),
+                library: builder.listLibraryAssets(themeDir),
+                customCss: builder.readCustomCss(themeDir, true),
+            };
+            reply(true, stateData);
+            broadcastStudioState(wc, stateData, false);
+            return;
+        }
+
+        if (action === "save-profile") {
+            markInternalWrite();
+            const baseCfg = builder.mergeConfig(parsed.config || readCurrentThemeConfig(themeDir, builder));
+            const saveOpts = {
+                id: parsed.profileId,
+                description: parsed.description,
+                builtIn: parsed.builtIn,
+            };
+            if (parsed.preserveWallpaper !== undefined) saveOpts.preserveWallpaper = Boolean(parsed.preserveWallpaper);
+            if (parsed.preserveAvatars !== undefined) saveOpts.preserveAvatars = Boolean(parsed.preserveAvatars);
+            const saved = builder.saveProfile(themeDir, parsed.name || parsed.profileId, baseCfg, saveOpts);
+            const res = builder.applyThemeConfig(themeDir, saved.config);
+            await broadcastThemeCssRefresh();
+            mirrorToRepo(themeDir, [
+                "kanagawa.config.json",
+                "kanagawa.css",
+                "loading.html",
+                "custom.css",
+                path.join("profiles", saved.id + ".json"),
+            ]);
+            markInternalWrite();
+            const stateData = {
+                config: res.cfg,
+                profiles: builder.listProfiles(themeDir),
+                library: builder.listLibraryAssets(themeDir),
+                customCss: builder.readCustomCss(themeDir, true),
+            };
+            reply(true, stateData);
+            broadcastStudioState(wc, stateData, false);
+            return;
+        }
+
+        if (action === "delete-profile") {
+            const deletedId = String(parsed.profileId || "");
+            const safeId = deletedId.toLowerCase().trim().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
+            markInternalWrite();
+            builder.deleteProfile(themeDir, deletedId);
+            const cfg = readCurrentThemeConfig(themeDir, builder);
+            let cfgChanged = false;
+            if (cfg.activeProfile === safeId || cfg.activeProfile === deletedId) {
+                cfg.activeProfile = "";
+                cfgChanged = true;
+                fs.writeFileSync(path.join(themeDir, "kanagawa.config.json"), JSON.stringify(cfg, null, 2) + "\n", "utf-8");
+            }
+            mirrorToRepo(
+                themeDir,
+                cfgChanged ? ["kanagawa.config.json"] : [],
+                safeId ? [path.join("profiles", safeId + ".json")] : []
+            );
+            markInternalWrite();
+            const stateData = {
+                config: cfg,
+                profiles: builder.listProfiles(themeDir),
+            };
+            reply(true, stateData);
+            broadcastStudioState(wc, stateData, false);
+            return;
+        }
+
+        if (action === "save-custom-css") {
+            markInternalWrite();
+            const customText = String(parsed.customCss || "");
+            const cfg = readCurrentThemeConfig(themeDir, builder);
+            const res = builder.applyThemeConfig(themeDir, cfg, { customCss: customText });
+            await broadcastThemeCssRefresh();
+            mirrorToRepo(themeDir, ["custom.css", "kanagawa.css", "kanagawa.config.json"]);
+            markInternalWrite();
+            const stateData = {
+                config: res.cfg,
+                customCss: customText,
+            };
+            reply(true, stateData);
+            broadcastStudioState(wc, stateData, false);
+            return;
+        }
+
+        if (action === "reset-default") {
+            markInternalWrite();
+            const defCfg = builder.defaultConfig();
+            const res = builder.applyThemeConfig(themeDir, defCfg, { customCss: "" });
+            await broadcastThemeCssRefresh();
+            mirrorToRepo(themeDir, ["kanagawa.config.json", "kanagawa.css", "loading.html", "custom.css"]);
+            markInternalWrite();
+            const stateData = {
+                config: res.cfg,
+                profiles: builder.listProfiles(themeDir),
+                library: builder.listLibraryAssets(themeDir),
+                customCss: "",
+            };
+            reply(true, stateData);
+            broadcastStudioState(wc, stateData, false);
+            return;
+        }
+
+        if (action === "reload-window") {
+            reply(true, { reloading: true });
+            setTimeout(() => {
+                if (!wc.isDestroyed()) wc.reload();
+            }, 80);
+            return;
+        }
+
+        if (action === "open-folder") {
+            const targetDir = readRepoLink(themeDir) || themeDir;
+            await electron_1.shell.openPath(targetDir);
+            reply(true, { path: targetDir });
+            return;
+        }
+
+        reply(false, "Unknown studio action: " + action);
+    } catch (e) {
+        console.error("[kanagawa-studio] handler error:", e);
+        reply(false, e && e.message ? e.message : String(e));
+    }
+}
+
 /**
  * Injects the pixel theme stylesheet into a window's web contents.
  * Re-injects on every dom-ready so in-app navigations stay themed.
@@ -3109,16 +3851,21 @@ function attachPixelTheme(win) {
                 if (wc.isDestroyed()) {
                     return;
                 }
-                if (lastCssKey) {
+                const prevKey = lastCssKey;
+                const nextKey = await wc.insertCSS(css);
+                lastCssKey = nextKey;
+                if (prevKey) {
                     try {
-                        await wc.removeInsertedCSS(lastCssKey);
+                        await wc.removeInsertedCSS(prevKey);
                     }
                     catch (e) { /* sheet already gone with the old document */ }
-                    lastCssKey = null;
                 }
-                lastCssKey = await wc.insertCSS(css);
             }).catch((e) => console.error("[pixel-theme] insertCSS failed:", e));
+            return cssChain;
         };
+        const wcId = wc.id;
+        activeThemeWindows.set(wcId, { win, wc, applyCss });
+        ensureThemeDirWatch(getThemeDir());
         // Chromium persists page zoom PER HOST, and the whole UI lives on
         // 127.0.0.1 -- one accidental Ctrl+wheel (or a stray zoom from a debug
         // session) sticks to every future launch, on every port. Measured on
@@ -3145,9 +3892,11 @@ function attachPixelTheme(win) {
             if (css) {
                 applyCss(css);
             }
-            // Pre-warm font glyph caches and GPU texture atlas immediately at startup
-            wc.executeJavaScript(FONT_PREWARM_JS, true)
-                .catch((e) => console.error("[pixel-theme] font prewarm failed:", e));
+            // Pre-warm font glyph caches only when bundled pixel fonts actually exist in themeDir.
+            if (hasThemeFonts()) {
+                wc.executeJavaScript(FONT_PREWARM_JS, true)
+                    .catch((e) => console.error("[pixel-theme] font prewarm failed:", e));
+            }
             // Must run on every dom-ready, not just once: the grid size depends
             // on DPR, which changes with monitor, OS scale and window zoom.
             wc.executeJavaScript(DPR_SYNC_JS, true)
@@ -3212,6 +3961,8 @@ function attachPixelTheme(win) {
                 })
                 .catch((e) => console.error("[pixel-theme] comment tracker opt failed:", e));
             // Liquid Glass widgets (Phase 2). Only injected if theme declares --px-glass: on.
+            // Skip GLASS_PANEL_JS whenever studio.js exists in themeDir so both pills never collide.
+            const studioPresent = hasStudioScript(getThemeDir());
             if (isGlassTheme()) {
                 wc.executeJavaScript(GLASS_QUALITY_JS, true)
                     .catch((e) => console.error("[pixel-theme] glass quality failed:", e));
@@ -3229,17 +3980,30 @@ function attachPixelTheme(win) {
                         if (r && r !== "installed" && r !== "already-present") {
                             console.error("[pixel-theme] glass lens not installed:", r);
                         }
+                        if (studioPresent) return null;
                         return wc.executeJavaScript(GLASS_PANEL_JS, true);
                     })
                     .catch((e) => console.error("[pixel-theme] glass widgets failed:", e));
             }
+            if (/^https?:/i.test(wc.getURL())) {
+                const studioCode = loadStudioScript(getThemeDir());
+                if (studioCode) {
+                    wc.executeJavaScript(studioCode, true)
+                        .catch((e) => console.error("[kanagawa-studio] inject failed:", e));
+                }
+            }
         });
         syncTitleBarOverlay(win);
 
-        // Intercept glass tuning panel persistence message: [px-glass] { ... }
+        // Intercept Studio UI & glass tuning panel console messages (Electron <=43 & 44+)
         wc.on("console-message", (...args) => {
-            const msg = args.find((a) => typeof a === "string" && a.startsWith("[px-glass] "));
+            const msg = extractConsoleMessageText(args);
             if (!msg) return;
+            if (msg.startsWith("__KN_STUDIO__")) {
+                void handleStudioMessage(win, wc, msg);
+                return;
+            }
+            if (!msg.startsWith("[px-glass] ")) return;
             try {
                 const jsonStr = msg.slice(11);
                 const params = JSON.parse(jsonStr);
@@ -3302,6 +4066,24 @@ function attachPixelTheme(win) {
             console.error("[pixel-theme] settings watch failed:", e);
         }
         win.on("closed", () => {
+            activeThemeWindows.delete(wcId);
+            for (const [upId, entry] of studioUploadChunks.entries()) {
+                if (entry && entry.wcId === wcId) {
+                    if (entry.timer) clearTimeout(entry.timer);
+                    studioUploadChunks.delete(upId);
+                }
+            }
+            if (activeThemeWindows.size === 0) {
+                if (themeReloadDebounce) {
+                    clearTimeout(themeReloadDebounce);
+                    themeReloadDebounce = null;
+                }
+                if (themeDirWatcher) {
+                    try { themeDirWatcher.close(); } catch (_) {}
+                    themeDirWatcher = null;
+                    watchedThemeDir = null;
+                }
+            }
             try {
                 watcher && watcher.close();
             }
@@ -3735,21 +4517,30 @@ function getKanagawaLoadingHtml(isLight, fg, bg) {
 </html>`;
 }
 
+function sanitizeLoadingColor(val, fallback) {
+    const s = String(val || "").trim();
+    return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : fallback;
+}
+
 function getLoadingHtml(isLight, foregroundColor, backgroundColor) {
     try {
         const themeDir = getThemeDir();
         const customLoadingPath = path.join(themeDir, "loading.html");
         const chrome = chromeColors(isLight);
-        const bg = chrome.background || backgroundColor || (isLight ? "#E5DDB0" : "#131720");
-        const fg = chrome.foreground || foregroundColor || (isLight ? "#3E3E4C" : "#EAE6D3");
+        const defaultBg = isLight ? "#E5DDB0" : "#131720";
+        const defaultFg = isLight ? "#3E3E4C" : "#EAE6D3";
+        const bg = sanitizeLoadingColor(chrome.background || backgroundColor, defaultBg);
+        const fg = sanitizeLoadingColor(chrome.foreground || foregroundColor, defaultFg);
         if (fs.existsSync(customLoadingPath)) {
             let html = fs.readFileSync(customLoadingPath, "utf-8");
-            html = html
-                .replace(/\{\{MODE\}\}/g, isLight ? "light" : "dark")
-                .replace(/\{\{IS_LIGHT\}\}/g, isLight ? "true" : "false")
-                .replace(/\{\{BG\}\}/g, bg)
-                .replace(/\{\{FG\}\}/g, fg);
-            return html;
+            if (html && html.trim()) {
+                html = html
+                    .replace(/\{\{MODE\}\}/g, isLight ? "light" : "dark")
+                    .replace(/\{\{IS_LIGHT\}\}/g, isLight ? "true" : "false")
+                    .replace(/\{\{BG\}\}/g, bg)
+                    .replace(/\{\{FG\}\}/g, fg);
+                return html;
+            }
         }
         const themeBase = path.basename(themeDir).toLowerCase();
         if (themeBase.includes("kanagawa")) {
@@ -3838,15 +4629,25 @@ ${fontFaceCss("ui")}
 `;
 }
 
+function resolveIsLightForOverlay(backgroundColor) {
+    try {
+        const settingsPath = require("./paths").getSettingsPbPath();
+        if (settingsPath && fs.existsSync(settingsPath)) {
+            return isLightTheme();
+        }
+    }
+    catch (_) {}
+    return isLightColor(backgroundColor);
+}
+
 /**
  * Theme-aware variant of the stock loading overlay. Same contract as
  * loadingOverlay.attachLoadingOverlay; falls back to the original on error.
  */
 function attachPixelLoadingOverlay(win, foregroundColor, backgroundColor) {
     try {
-        // Derived from the color rather than matched against a literal: the
-        // installer rewrites these constants, so an equality check would break.
-        const isLight = isLightColor(backgroundColor);
+        if (!win || win.isDestroyed() || !win.contentView) return;
+        const isLight = resolveIsLightForOverlay(backgroundColor);
         const view = new electron_1.WebContentsView({
             webPreferences: {
                 nodeIntegration: false,
@@ -3857,29 +4658,44 @@ function attachPixelLoadingOverlay(win, foregroundColor, backgroundColor) {
         void view.webContents.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
         win.contentView.addChildView(view);
         const updateBounds = () => {
-            const [width, height] = win.getContentSize();
-            view.setBounds({ x: 0, y: 0, width, height });
+            if (win.isDestroyed()) return;
+            try {
+                const [width, height] = win.getContentSize();
+                view.setBounds({ x: 0, y: 0, width, height });
+            } catch (_) {}
         };
         updateBounds();
         win.on("resize", updateBounds);
+        let dismissed = false;
+        let failsafe = null;
         const dismiss = () => {
+            if (dismissed) return;
+            dismissed = true;
+            if (failsafe) {
+                clearTimeout(failsafe);
+                failsafe = null;
+            }
+            if (!win.isDestroyed()) {
+                try { win.off("resize", updateBounds); } catch (_) {}
+                try { win.off("closed", dismiss); } catch (_) {}
+                try {
+                    if (win.webContents && !win.webContents.isDestroyed()) {
+                        win.webContents.off("did-finish-load", dismiss);
+                    }
+                } catch (_) {}
+                try { win.contentView.removeChildView(view); } catch (_) {}
+            }
             try {
-                win.contentView.removeChildView(view);
-            }
-            catch (_) {
-                // window may already be closed
-            }
-            win.off("resize", updateBounds);
+                if (view.webContents && !view.webContents.isDestroyed()) {
+                    view.webContents.close();
+                }
+            } catch (_) {}
         };
         win.webContents.once("did-finish-load", dismiss);
-        // Failsafe: if the first navigation never finishes (the startup race
-        // strands the window; measured live 2026-08-04 13:38 -- the user sat
-        // behind this overlay "forever"), the once() above never fires. The
-        // load-retry probe usually reloads long before this, but if IT gives
-        // up too, a blank window still beats an eternal loading screen.
-        const failsafe = setTimeout(dismiss, 150000);
-        win.webContents.once("did-finish-load", () => clearTimeout(failsafe));
-        win.on("closed", () => clearTimeout(failsafe));
+        win.once("closed", dismiss);
+        // Failsafe: if the first navigation never finishes (startup warmup race),
+        // tear down the overlay cleanly so the window cannot stay wedged behind it.
+        failsafe = setTimeout(dismiss, 150000);
     }
     catch (e) {
         console.error("[pixel-theme] pixel overlay failed, using stock overlay:", e);

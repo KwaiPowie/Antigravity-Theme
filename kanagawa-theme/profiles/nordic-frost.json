@@ -1,0 +1,134 @@
+{
+  "id": "nordic-frost",
+  "name": "Nordic Frost",
+  "description": "Nordic Frost palette",
+  "builtIn": true,
+  "preserveWallpaper": true,
+  "preserveAvatars": true,
+  "updatedAt": "2026-11-15T18:13:01.082Z",
+  "config": {
+    "schemaVersion": 2,
+    "activeProfile": "nordic-frost",
+    "preset": "nordic-frost",
+    "wallpaper": "KEEP_EMBEDDED",
+    "wallpaperLight": "SAME",
+    "wallpaperPosition": "right top",
+    "wallpaperPositionLight": "SAME",
+    "wallpaperFit": "cover",
+    "wallpaperEffects": {
+      "blur": 0,
+      "brightness": 100,
+      "contrast": 100,
+      "saturate": 100,
+      "opacity": 100,
+      "scale": 100,
+      "scrimOpacity": 75,
+      "scrimStyle": "directional"
+    },
+    "surfaces": {
+      "sidebarOpacity": 64,
+      "panelOpacity": 42,
+      "chatOpacity": 66,
+      "userBubbleOpacity": 58,
+      "composerOpacity": 44,
+      "codeOpacity": 72,
+      "editorOpacity": 64,
+      "overlayOpacity": 96,
+      "titlebarOpacity": 74,
+      "glassBlur": 0,
+      "glassSaturate": 130,
+      "panelRadius": 14,
+      "cardRadius": 12,
+      "composerRadius": 16,
+      "bubbleRadius": 16
+    },
+    "avatars": {
+      "userVisible": true,
+      "userSize": 36,
+      "userRadius": 18,
+      "userRotate": 18,
+      "agentVisible": true,
+      "agentSize": 36,
+      "agentRadius": 18,
+      "agentRotate": -18
+    },
+    "composer": {
+      "rimStart": "#88C0D0",
+      "rimMid": "#ECEFF4",
+      "rimEnd": "#81A1C1",
+      "innerStart": "#27303F",
+      "innerMid": "#202633",
+      "innerEnd": "#2B3646",
+      "userBubbleStart": "#2E3B4E",
+      "userBubbleEnd": "#242D3B",
+      "userBubbleBorder": "#88C0D0"
+    },
+    "typography": {
+      "uiFont": "",
+      "monoFont": "",
+      "chatFontSize": 0,
+      "codeFontSize": 0,
+      "lineHeight": 1.62
+    },
+    "userAvatar": "KEEP_EMBEDDED",
+    "agentAvatar": {
+      "image": "SVG_STAR",
+      "bgStops": [
+        "#ECEFF4",
+        "#E5E9F0",
+        "#D8DEE9"
+      ],
+      "iconStops": [
+        "#5E81AC",
+        "#81A1C1",
+        "#2E3440"
+      ]
+    },
+    "dark": {
+      "chromeBg": "#242933",
+      "chromeFg": "#ECEFF4",
+      "primary": "#88C0D0",
+      "accentBlue": "#81A1C1",
+      "accentAqua": "#8FBCBB",
+      "accentGreen": "#A3BE8C",
+      "accentPink": "#BF616A",
+      "accentViolet": "#B48EAD",
+      "accentOrange": "#D08770",
+      "text": "#ECEFF4",
+      "textMuted": "#D8DEE9",
+      "textSubtle": "#7B88A1",
+      "surfaceBase": "#282E3A",
+      "sidebarBase": "#20252F",
+      "overlayBase": "#2B313E",
+      "scrimBase": "#1C2029",
+      "selection": "#3B4252"
+    },
+    "light": {
+      "chromeBg": "#E5E9F0",
+      "chromeFg": "#2E3440",
+      "primary": "#5E81AC",
+      "text": "#2E3440",
+      "textMuted": "#4C566A",
+      "paper0": "#CBD2DF",
+      "paper1": "#D8DEE9",
+      "paper2": "#E5E9F0",
+      "paper3": "#ECEFF4",
+      "surfaceBase": "#F4F6F9",
+      "sidebarBase": "#EAEFF5",
+      "overlayBase": "#ECEFF4",
+      "scrimBase": "#ECEFF4"
+    },
+    "loading": {
+      "title": "Antigravity",
+      "subtitle": "Ready for Nordic Frost...",
+      "style": "kanagawa-wave",
+      "showEmblem": true,
+      "showProgress": true
+    },
+    "studio": {
+      "showTriggerPill": true,
+      "pillPosition": "bottom-right",
+      "language": "vi"
+    }
+  }
+}

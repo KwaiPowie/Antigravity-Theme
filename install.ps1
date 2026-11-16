@@ -8,7 +8,14 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 
-$ThemeName = 'kanagawa-theme'
+$rawTheme = if ($Theme) { $Theme.Trim() } else { 'kanagawa' }
+if ($rawTheme -match '^[a-zA-Z0-9_-]+$') {
+    $ThemeName = if ($rawTheme -like '*-theme') { $rawTheme } else { "$rawTheme-theme" }
+}
+else {
+    Write-Host "[kanagawa] ERROR / LOI: Invalid theme name '$Theme'. Only letters, digits, '_' and '-' are allowed." -ForegroundColor Red
+    exit 1
+}
 $AppDir    = Join-Path $env:LOCALAPPDATA 'Programs\Antigravity'
 $Resources = Join-Path $AppDir 'resources'
 $Asar      = Join-Path $Resources 'app.asar'
@@ -16,6 +23,7 @@ $Backup    = Join-Path $Resources 'app.asar.pixel-backup'
 $Injector  = Join-Path $PSScriptRoot 'patch\pixelTheme.js'
 $ThemeSrc  = Join-Path $PSScriptRoot $ThemeName
 $Work      = Join-Path $env:TEMP ('kanagawa-theme-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$NewAsar   = "$Asar.pixel-new"
 
 function Write-Step($msg) { Write-Host "[kanagawa] $msg" -ForegroundColor Cyan }
 function Fail($msg) { Write-Host "[kanagawa] ERROR / LOI: $msg" -ForegroundColor Red; exit 1 }
@@ -38,90 +46,140 @@ if ($procs.Count -gt 0) {
 }
 
 # --- 2. Extract and patch app.asar if needed ---
-Write-Step "Extracting app.asar / Dang giai nen app.asar..."
-npx --yes @electron/asar extract $Asar $Work
-if ($LASTEXITCODE -ne 0) { Fail "asar extract failed (is Node.js installed?) / Loi giai nen asar (kiem tra da cai Node.js chua)." }
+$InstallError = $null
+try {
+    Write-Step "Extracting app.asar / Dang giai nen app.asar..."
+    npx --yes @electron/asar extract $Asar $Work
+    if ($LASTEXITCODE -ne 0) { throw "asar extract failed (is Node.js installed?) / Loi giai nen asar (kiem tra da cai Node.js chua)." }
 
-$UtilsPath = Join-Path $Work 'dist\utils.js'
-if (-not (Test-Path $UtilsPath)) { Fail "dist/utils.js not found inside app.asar / Khong tim thay dist/utils.js." }
-$Utils = [System.IO.File]::ReadAllText($UtilsPath)
+    $UtilsPath = Join-Path $Work 'dist\utils.js'
+    if (-not (Test-Path $UtilsPath)) { throw "dist/utils.js not found inside app.asar / Khong tim thay dist/utils.js." }
+    $Utils = [System.IO.File]::ReadAllText($UtilsPath)
 
-$PackedInjector = Join-Path $Work 'dist\pixelTheme.js'
-$AlreadyPatched = $Utils.Contains('pixelTheme')
-$NeedsRepack = $false
-
-if ($AlreadyPatched) {
-    $packedHash = if (Test-Path $PackedInjector) { (Get-FileHash $PackedInjector).Hash } else { '' }
-    if ($packedHash -ne (Get-FileHash $Injector).Hash) {
-        Write-Step "Updating injector inside app.asar / Dang cap nhat injector trong app.asar..."
-        Copy-Item $Injector $PackedInjector -Force
-        $NeedsRepack = $true
-    }
-    else {
-        Write-Step "app.asar up to date - refreshing theme assets / app.asar da moi nhat, chi dong bo theme..."
-    }
-}
-else {
-    $A1 = 'const loadingOverlay_1 = require("./loadingOverlay");'
-    $A2 = '(0, loadingOverlay_1.attachLoadingOverlay)(win, foregroundColor, backgroundColor);'
-    $A3 = 'void win.loadURL(url);'
-    $A4 = "const backgroundColor = isLight ? '#FAFAFA' : '#131313';"
-    $A5 = "const foregroundColor = isLight ? '#383A42' : '#FAFAFA';"
-    $A6 = 'titleBarOverlay: isMacOS()'
-
-    foreach ($a in @($A1, $A2, $A3, $A4, $A5, $A6)) {
-        if (-not $Utils.Contains($a)) {
-            Fail "Patch anchor not found in utils.js ($a)."
-        }
-    }
-
-    Write-Step "Patching dist/utils.js..."
-    $Utils = $Utils.Replace($A1, $A1 + "`nconst pixelTheme_1 = require(`"./pixelTheme`");")
-    $Utils = $Utils.Replace($A2, '(0, pixelTheme_1.attachPixelLoadingOverlay)(win, foregroundColor, backgroundColor);')
-    $Utils = $Utils.Replace($A3, "(0, pixelTheme_1.attachPixelTheme)(win);`n    " + $A3)
-    $Utils = $Utils.Replace($A4, "const pixelChrome_1 = (0, pixelTheme_1.chromeColors)(isLight);`n    const backgroundColor = pixelChrome_1.background;")
-    $Utils = $Utils.Replace($A5, 'const foregroundColor = pixelChrome_1.foreground;')
-    $Utils = $Utils.Replace($A6, 'titleBarOverlay: !(0, pixelTheme_1.wantsNativeCaption)() || isMacOS()')
-    [System.IO.File]::WriteAllText($UtilsPath, $Utils, (New-Object System.Text.UTF8Encoding($false)))
+    $PackedInjector = Join-Path $Work 'dist\pixelTheme.js'
+    $AlreadyPatched = $Utils.Contains('pixelTheme')
+    $NeedsRepack = $false
 
     $HandlersPath = Join-Path $Work 'dist\ipcHandlers.js'
-    if (Test-Path $HandlersPath) {
-        $Handlers = [System.IO.File]::ReadAllText($HandlersPath)
-        $H1 = "if (win && process.platform === 'win32') {"
-        if ($Handlers.Contains($H1)) {
-            $Handlers = $Handlers.Replace($H1, "if (win && process.platform === 'win32' && !win.__pixelNoNativeCaption) {")
-            [System.IO.File]::WriteAllText($HandlersPath, $Handlers, (New-Object System.Text.UTF8Encoding($false)))
+    $H1 = "if (win && process.platform === 'win32') {"
+
+    if ($AlreadyPatched) {
+        $expectedHooks = @(
+            'pixelTheme_1.attachPixelLoadingOverlay',
+            'pixelTheme_1.attachPixelTheme',
+            'pixelTheme_1.chromeColors',
+            'pixelTheme_1.wantsNativeCaption'
+        )
+        $missingHooks = @($expectedHooks | Where-Object { -not $Utils.Contains($_) })
+        if ($missingHooks.Count -gt 0) {
+            throw ("app.asar contains a partial pixelTheme patch (missing: " + ($missingHooks -join ', ') + "). Restore backup or reinstall Antigravity first.")
+        }
+
+        if (Test-Path $HandlersPath) {
+            $Handlers = [System.IO.File]::ReadAllText($HandlersPath)
+            if ($Handlers.Contains($H1)) {
+                Write-Step "Patching dist/ipcHandlers.js..."
+                $Handlers = $Handlers.Replace($H1, "if (win && process.platform === 'win32' && !win.__pixelNoNativeCaption) {")
+                [System.IO.File]::WriteAllText($HandlersPath, $Handlers, (New-Object System.Text.UTF8Encoding($false)))
+                $NeedsRepack = $true
+            }
+        }
+
+        if (-not (Test-Path $Backup)) {
+            Write-Step "Warning: app.asar.pixel-backup is missing (uninstall.ps1 will reverse-unpatch app.asar if needed)."
+        }
+
+        $packedHash = if (Test-Path $PackedInjector) { (Get-FileHash $PackedInjector).Hash } else { '' }
+        if ($packedHash -ne (Get-FileHash $Injector).Hash) {
+            Write-Step "Updating injector inside app.asar / Dang cap nhat injector trong app.asar..."
+            Copy-Item $Injector $PackedInjector -Force
+            $NeedsRepack = $true
+        }
+        elseif (-not $NeedsRepack) {
+            Write-Step "app.asar up to date - refreshing theme assets / app.asar da moi nhat, chi dong bo theme..."
         }
     }
+    else {
+        $A1 = 'const loadingOverlay_1 = require("./loadingOverlay");'
+        $A2 = '(0, loadingOverlay_1.attachLoadingOverlay)(win, foregroundColor, backgroundColor);'
+        $A3 = 'void win.loadURL(url);'
+        $A4 = "const backgroundColor = isLight ? '#FAFAFA' : '#131313';"
+        $A5 = "const foregroundColor = isLight ? '#383A42' : '#FAFAFA';"
+        $A6 = 'titleBarOverlay: isMacOS()'
 
-    Copy-Item $Injector $PackedInjector -Force
-    Write-Step "Backing up app.asar -> app.asar.pixel-backup"
-    Copy-Item $Asar $Backup -Force
-    $NeedsRepack = $true
+        foreach ($a in @($A1, $A2, $A3, $A4, $A5, $A6)) {
+            if (-not $Utils.Contains($a)) {
+                throw "Patch anchor not found in utils.js ($a)."
+            }
+        }
+
+        Write-Step "Patching dist/utils.js..."
+        $Utils = $Utils.Replace($A1, $A1 + "`nconst pixelTheme_1 = require(`"./pixelTheme`");")
+        $Utils = $Utils.Replace($A2, '(0, pixelTheme_1.attachPixelLoadingOverlay)(win, foregroundColor, backgroundColor);')
+        $Utils = $Utils.Replace($A3, "(0, pixelTheme_1.attachPixelTheme)(win);`n    " + $A3)
+        $Utils = $Utils.Replace($A4, "const pixelChrome_1 = (0, pixelTheme_1.chromeColors)(isLight);`n    const backgroundColor = pixelChrome_1.background;")
+        $Utils = $Utils.Replace($A5, 'const foregroundColor = pixelChrome_1.foreground;')
+        $Utils = $Utils.Replace($A6, 'titleBarOverlay: !(0, pixelTheme_1.wantsNativeCaption)() || isMacOS()')
+        [System.IO.File]::WriteAllText($UtilsPath, $Utils, (New-Object System.Text.UTF8Encoding($false)))
+
+        if (Test-Path $HandlersPath) {
+            $Handlers = [System.IO.File]::ReadAllText($HandlersPath)
+            if ($Handlers.Contains($H1)) {
+                $Handlers = $Handlers.Replace($H1, "if (win && process.platform === 'win32' && !win.__pixelNoNativeCaption) {")
+                [System.IO.File]::WriteAllText($HandlersPath, $Handlers, (New-Object System.Text.UTF8Encoding($false)))
+            }
+        }
+
+        Copy-Item $Injector $PackedInjector -Force
+        if (-not (Test-Path $Backup)) {
+            Write-Step "Backing up app.asar -> app.asar.pixel-backup"
+            Copy-Item $Asar $Backup -Force
+        }
+        $NeedsRepack = $true
+    }
+
+    if ($NeedsRepack) {
+        Write-Step "Repacking app.asar / Dang dong goi lai app.asar..."
+        npx --yes @electron/asar pack $Work $NewAsar
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path $NewAsar)) { throw "asar pack failed - app.asar was NOT modified." }
+        Move-Item $NewAsar $Asar -Force
+    }
 }
-
-if ($NeedsRepack) {
-    Write-Step "Repacking app.asar / Dang dong goi lai app.asar..."
-    $NewAsar = "$Asar.pixel-new"
-    npx --yes @electron/asar pack $Work $NewAsar
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $NewAsar)) { Fail "asar pack failed - app.asar was NOT modified." }
-    Move-Item $NewAsar $Asar -Force
+catch {
+    $InstallError = $_.Exception.Message
 }
+finally {
+    Remove-Item $Work -Recurse -Force -Confirm:$false -ErrorAction SilentlyContinue
+    if (Test-Path $NewAsar) {
+        Remove-Item $NewAsar -Force -Confirm:$false -ErrorAction SilentlyContinue
+    }
+}
+if ($InstallError) { Fail $InstallError }
 
-# --- 3. Deploy kanagawa-theme assets ---
+# --- 3. Deploy $ThemeName assets ---
 $ThemeDst = Join-Path $Resources $ThemeName
 Write-Step "Deploying $ThemeName to $ThemeDst..."
 if (Test-Path $ThemeDst) { Remove-Item $ThemeDst -Recurse -Force -Confirm:$false }
-Copy-Item $ThemeSrc $ThemeDst -Recurse -Force
+New-Item -ItemType Directory -Path $ThemeDst -Force | Out-Null
+Get-ChildItem -Path $ThemeSrc -Force | Where-Object {
+    $_.Name -notin @('.live-watch.json', 'repo-link.json')
+} | ForEach-Object {
+    Copy-Item $_.FullName -Destination (Join-Path $ThemeDst $_.Name) -Recurse -Force
+}
+
+$RepoLink = @{
+    repoRoot  = $PSScriptRoot
+    themeDir  = $ThemeSrc
+    updatedAt = (Get-Date).ToString('o')
+} | ConvertTo-Json
+[System.IO.File]::WriteAllText((Join-Path $ThemeDst 'repo-link.json'), $RepoLink, (New-Object System.Text.UTF8Encoding($false)))
 
 $ActiveConfig = @{ theme = $ThemeName } | ConvertTo-Json
 $ActiveConfigPath = Join-Path $Resources 'active-theme.json'
 [System.IO.File]::WriteAllText($ActiveConfigPath, $ActiveConfig, (New-Object System.Text.UTF8Encoding($false)))
 
-Remove-Item $Work -Recurse -Force -Confirm:$false -ErrorAction SilentlyContinue
-
 Write-Host ""
-Write-Host "  Kanagawa Theme installed! / Da cai dat Kanagawa Theme xong!" -ForegroundColor Green
-Write-Host "  - Open Antigravity to enjoy the theme & loading screen. / Mo lai Antigravity de su dung." -ForegroundColor White
-Write-Host "  - Customize wallpaper, colors & avatars / Tuy bien anh nen, mau, avatar: .\customize-kanagawa.ps1 -Menu" -ForegroundColor Cyan
+Write-Host "  Kanagawa Theme installed! / Da cai dat Kanagawa Theme + Studio xong!" -ForegroundColor Green
+Write-Host "  - Open Antigravity, then press Ctrl+Alt+K (or click the floating Studio pill) to customize live!" -ForegroundColor White
+Write-Host "  - Mo lai Antigravity roi bam Ctrl+Alt+K (hoac nut Studio o goc duoi phai) de tuy bien truc tiep!" -ForegroundColor Cyan
 Write-Host ""

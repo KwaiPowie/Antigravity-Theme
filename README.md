@@ -28,7 +28,7 @@ Theme **Kanagawa Wave (Tối)** & **Kanagawa Lotus (Sáng)** cho **Google Antigr
 
 1. Tải repo về máy:
    ```powershell
-   git clone https://github.com/Tuna285/Antigravity-Theme.git
+   git clone https://github.com/kienvts123-collab/Antigravity-Theme.git
    cd Antigravity-Theme
    ```
 2. Đóng hoàn toàn Antigravity (hoặc mở **PowerShell ở ngoài**, không chạy trong terminal bên trong Antigravity, rồi dùng cờ `-KillRunning`):
@@ -40,36 +40,47 @@ Theme **Kanagawa Wave (Tối)** & **Kanagawa Lotus (Sáng)** cho **Google Antigr
 
 > **Lưu ý:** Khi Antigravity tự cập nhật phiên bản mới, file `app.asar` sẽ trở về bản gốc. Bạn chỉ cần chạy lại `.\install.ps1 -KillRunning` là theme hoạt động lại bình thường.
 
-### Tùy biến dễ dàng (Hình nền, Màu theme & 2 Avatar)
+### Tùy biến dễ dàng với Theme Studio (`Ctrl+Alt+K`) & CLI
 
-Không cần mở hay tự sửa file `kanagawa.css` nặng hay tự chuyển ảnh sang Base64.
+Theme nay có **In-App Theme Studio** chạy trực tiếp bên trong Antigravity — chỉnh slider xem trước **60fps** ngay lập tức và lưu **không cần reload lại cửa sổ**:
 
-- **Cách 1 — Menu tương tác / Click đúp:** Click đúp **`customize-kanagawa.bat`** hoặc chạy:
+- **Mở Theme Studio:** Nhấn **`Ctrl+Alt+K`** hoặc click nút nổi **`🎨 Theme Studio`** ở góc dưới phải (có thể ẩn nút nổi trong tab *Nâng cao* nếu thích tối giản).
+- **5 tab tùy chỉnh toàn diện:**
+  1. **Hồ sơ (Profiles):** Chuyển 1 click giữa 9+ combo có sẵn (*My Current Setup*, *Frosted Glass*, *Minimal Clean*, *Tokyo Night*, *Nordic Frost*, *Kanagawa Wave/Dragon*, *Sakura Dusk*, *Midnight Aqua*) — các hồ sơ preset tự động **giữ nguyên hình nền & avatar hiện tại của bạn** (riêng *Minimal Clean* tắt hình nền); hỗ trợ lưu/cập nhật/export-import combo của riêng bạn.
+  2. **Hình nền (Wallpaper):** Hỗ trợ **`.avif`**, `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg`, `.gif`, `.bmp`; kéo-thả ảnh trực tiếp hoặc chọn file; thư viện ảnh dùng lại nhanh; hình nền **riêng cho Dark / Light mode**; chỉnh **Blur, Brightness, Contrast, Saturation, Opacity, Scale**, **Scrim overlay** (`directional` / `solid` / `vignette` / `gradient` / `none`), **Fit** (`cover` / `contain` / `auto` / `100% 100%`) & lưới 9 vị trí.
+  3. **Bề mặt & Kính mờ (Surfaces & Glass):** Slider chỉnh độ trong suốt riêng từng vùng (**Sidebar**, **Panel phụ / Agent**, **Nền vùng Chat**, **Tin nhắn User**, **Khung Composer**, **Code block**, **Monaco Editor / Terminal**, **Menu/Modal nổi**, **Titlebar**), **Kính mờ (`backdrop-filter blur` & `saturate`)** và bo góc (`radius`) từng thành phần.
+  4. **Màu & Avatar:** Đổi nhanh bảng màu 6 preset, color picker đầy đủ cho Dark & Light mode, chỉnh **cỡ / bo góc (`0%–50%`) / góc xoay (kể cả `0°`) / bật-tắt từng avatar** và gradient viền + nền Composer / User bubble.
+  5. **Nâng cao (Typography, Loading & Custom CSS):** Chọn font UI & font Code, cỡ chữ chat/code, `line-height`, tùy chỉnh màn hình Loading (`Kanagawa Wave` / `Minimal` / `Terminal`, chữ chính/phụ, hiện/ẩn vòng xoay & thanh tiến trình) và trình soạn `kanagawa-theme/custom.css` lưu bền vững qua mọi lần rebuild.
+
+**Tùy biến qua PowerShell / Menu nhanh:**
+- **Menu tương tác / File picker:** Click đúp **`customize-kanagawa.bat`** hoặc chạy:
   ```powershell
   .\customize-kanagawa.ps1 -Menu
 
-  # Hoặc chọn thẳng từng file ảnh qua hộp thoại Windows Explorer:
+  # Hoặc chọn thẳng từng file ảnh qua hộp thoại Windows Explorer (hỗ trợ cả .avif):
   .\customize-kanagawa.ps1 -PickWallpaper
+  .\customize-kanagawa.ps1 -PickWallpaperLight
   .\customize-kanagawa.ps1 -PickUserAvatar
   .\customize-kanagawa.ps1 -PickAgentAvatar
   ```
-- **Cách 2 — Dùng tham số dòng lệnh / Preset màu có sẵn:**
+- **Dùng tham số CLI & Profile:**
   ```powershell
-  # Đổi nhanh preset màu: kanagawa-wave | kanagawa-dragon | sakura-dusk | midnight-aqua
-  .\customize-kanagawa.ps1 -Preset sakura-dusk
+  # Chuyển nhanh Profile combo hoặc Preset bảng màu
+  .\customize-kanagawa.ps1 -Profile frosted-glass
+  .\customize-kanagawa.ps1 -Preset tokyo-night
 
-  # Truyền thẳng đường dẫn ảnh (hỗ trợ png, jpg, jpeg, webp, svg, gif, bmp)
-  .\customize-kanagawa.ps1 -Wallpaper "D:\Pictures\bg.jpg" -UserAvatar "D:\Pictures\me.png" -AgentAvatar "D:\Pictures\bot.png"
+  # Đổi hình nền .avif + bật kính mờ + scrim + màn hình loading Terminal + lưu profile mới
+  .\customize-kanagawa.ps1 -Wallpaper "D:\Pictures\bg.avif" -GlassBlur 14 -PanelOpacity 36 -ScrimStyle gradient -LoadingStyle terminal -SaveProfile "My Glass"
 
-  # Tắt hình nền (dùng nền màu trơn theo preset)
+  # Chỉnh avatar riêng từng bên (size/bo góc/xoay/hiện-ẩn), hoặc tắt hình nền
+  .\customize-kanagawa.ps1 -AvatarRadius 50 -AvatarRotate 0 -UserAvatarSize 40 -AgentAvatarVisible "false"
   .\customize-kanagawa.ps1 -NoWallpaper
+  # Xem tất cả tham số CLI:
+  .\customize-kanagawa.ps1 -Help
   ```
-- **Cách 3 — Sửa file cấu hình:** Chỉnh mã màu hex, đường dẫn ảnh (đặt `"wallpaper": "NONE"` để tắt hình nền) hoặc chữ trên màn hình loading trong `kanagawa-theme/kanagawa.config.json`, sau đó chạy:
-  ```powershell
-  .\customize-kanagawa.ps1
-  ```
+- **Sửa file cấu hình / Custom CSS:** Chỉnh `kanagawa-theme/kanagawa.config.json` hoặc `kanagawa-theme/custom.css`, rồi chạy `.\customize-kanagawa.ps1` (hoặc `.\switch-theme.ps1` nếu chỉ sửa `custom.css`).
 
-Mỗi lần tùy biến sẽ tự cập nhật `kanagawa-theme/kanagawa.css`, `kanagawa-theme/loading.html`, đồng bộ sang Antigravity và tự reload giao diện ngay lập tức (**không cần đóng gói lại `app.asar`**).
+Mỗi lần tùy biến sẽ cập nhật `kanagawa-theme/kanagawa.css`, `kanagawa-theme/loading.html`, đồng bộ sang Antigravity và hot-swap CSS tức thì qua `fs.watch` (**không reload toàn bộ cửa sổ, không đóng gói lại `app.asar`**). Mọi thay đổi từ Studio cũng tự đồng bộ ngược về thư mục repo nhờ `repo-link.json`.
 
 ### Reload & Gỡ cài đặt
 
@@ -95,7 +106,7 @@ A crisp, unblurred **Kanagawa Wave (Dark)** & **Kanagawa Lotus (Light)** theme f
 
 1. Clone this repository:
    ```powershell
-   git clone https://github.com/Tuna285/Antigravity-Theme.git
+   git clone https://github.com/kienvts123-collab/Antigravity-Theme.git
    cd Antigravity-Theme
    ```
 2. Close Antigravity completely (or run from an **external PowerShell** window with `-KillRunning`):
@@ -107,36 +118,36 @@ A crisp, unblurred **Kanagawa Wave (Dark)** & **Kanagawa Lotus (Light)** theme f
 
 > **Note:** Antigravity auto-updates overwrite `app.asar` with the stock bundle. Simply re-run `.\install.ps1 -KillRunning` after an update to restore the theme.
 
-### Easy Customization (Wallpaper, Colors, & 2 Avatars)
+### Easy Customization with Theme Studio (`Ctrl+Alt+K`) & CLI
 
-No need to manually edit `kanagawa.css` or Base64-encode images.
+This theme includes a **live In-App Theme Studio** inside Antigravity — scrub sliders at **60fps** and apply changes with **zero window reloads**:
 
-- **Option A — Interactive Menu / File Picker:** Double-click **`customize-kanagawa.bat`** or run:
+- **Open Theme Studio:** Press **`Ctrl+Alt+K`** or click the floating **`🎨 Theme Studio`** pill in the bottom-right corner.
+- **5 Customization Tabs:**
+  1. **Profiles:** 1-click switching across 9+ full combos (*My Current Setup*, *Frosted Glass*, *Minimal Clean*, *Tokyo Night*, *Nordic Frost*, etc.) — built-in preset profiles automatically **preserve your current wallpaper & avatars** (while *Minimal Clean* disables wallpaper cleanly) — plus save, update, and JSON clipboard export/import.
+  2. **Wallpaper:** Full **`.avif`**, `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg`, `.gif`, `.bmp` support; native file picker or drag-and-drop; reusable asset library; separate **Dark & Light wallpapers**; **Blur, Brightness, Contrast, Saturation, Opacity, Scale** sliders; **Scrim overlay** (`directional` / `solid` / `vignette` / `gradient` / `none`), **Fit**, & 9-point position grid.
+  3. **Surfaces & Glassmorphism:** Per-region opacity sliders (**Sidebar**, **Side Panel**, **Chat Canvas**, **User Bubble**, **Composer**, **Code Blocks**, **Monaco Editor / Terminal**, **Modals/Menus**, **Titlebar**), backdrop blur & saturation, and corner radii.
+  4. **Colors & Avatars:** 6 quick palette presets, full Dark & Light color pickers, avatar **size, corner radius (`0%–50%`), rotation angle (including `0°`), individual show/hide toggles**, plus Composer & User Bubble gradient pickers.
+  5. **Advanced:** UI/Code font families & sizes, line-height, loading screen style (`kanagawa-wave` / `minimal` / `terminal`)/text/toggles, and persistent `kanagawa-theme/custom.css` editor.
+
+**PowerShell Menu & CLI:**
+- **Interactive Menu / Explorer Pickers:** Double-click **`customize-kanagawa.bat`** or run:
   ```powershell
   .\customize-kanagawa.ps1 -Menu
-
-  # Or pick files directly via Windows Explorer dialog:
   .\customize-kanagawa.ps1 -PickWallpaper
-  .\customize-kanagawa.ps1 -PickUserAvatar
-  .\customize-kanagawa.ps1 -PickAgentAvatar
+  .\customize-kanagawa.ps1 -PickWallpaperLight
   ```
-- **Option B — CLI Presets & Image Paths:**
+- **CLI Profiles, Presets & Options:**
   ```powershell
-  # Switch built-in presets: kanagawa-wave | kanagawa-dragon | sakura-dusk | midnight-aqua
-  .\customize-kanagawa.ps1 -Preset sakura-dusk
-
-  # Pass image paths directly (png, jpg, jpeg, webp, svg, gif, bmp)
-  .\customize-kanagawa.ps1 -Wallpaper "D:\Pictures\bg.jpg" -UserAvatar "D:\Pictures\me.png" -AgentAvatar "D:\Pictures\bot.png"
-
-  # Disable wallpaper (use solid preset background color)
+  .\customize-kanagawa.ps1 -Profile frosted-glass
+  .\customize-kanagawa.ps1 -Wallpaper "D:\Pictures\bg.avif" -GlassBlur 14 -PanelOpacity 36 -ScrimStyle gradient -LoadingStyle terminal -SaveProfile "My Glass"
+  .\customize-kanagawa.ps1 -AvatarRadius 50 -AvatarRotate 0 -UserAvatarSize 40 -AgentAvatarVisible "false"
   .\customize-kanagawa.ps1 -NoWallpaper
-  ```
-- **Option C — Edit Config File:** Edit hex colors, image paths (set `"wallpaper": "NONE"` to disable wallpaper), or loading screen text in `kanagawa-theme/kanagawa.config.json`, then run:
-  ```powershell
-  .\customize-kanagawa.ps1
+  # List all CLI parameters:
+  .\customize-kanagawa.ps1 -Help
   ```
 
-Every change regenerates `kanagawa-theme/kanagawa.css` & `kanagawa-theme/loading.html`, syncs to Antigravity, and hot-reloads the window without restarting (**no `app.asar` repack needed after initial install**).
+Changes update `kanagawa-theme/kanagawa.css` & `kanagawa-theme/loading.html`, sync cleanly to Antigravity, and hot-swap CSS via `fs.watch` without reloading the window (**no `app.asar` repack needed**). Edits made in Studio also mirror back to your repo folder via `repo-link.json`.
 
 ### Reload & Uninstall
 

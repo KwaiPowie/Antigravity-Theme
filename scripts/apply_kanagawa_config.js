@@ -1,644 +1,403 @@
 #!/usr/bin/env node
 /**
- * Builds and updates kanagawa-theme/kanagawa.css and kanagawa-theme/loading.html
- * from kanagawa-theme/kanagawa.config.json (plus optional CLI overrides).
+ * CLI frontend for Antigravity Theme customization.
+ * Delegates config merging, CSS generation, asset embedding, and profile management
+ * to kanagawa-theme/theme-builder.js.
  */
+"use strict";
+
 const fs = require("fs");
 const path = require("path");
+const tb = require("../kanagawa-theme/theme-builder.js");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const THEME_DIR = path.join(REPO_ROOT, "kanagawa-theme");
 const CONFIG_PATH = path.join(THEME_DIR, "kanagawa.config.json");
-const CSS_PATH = path.join(THEME_DIR, "kanagawa.css");
-const LOADING_PATH = path.join(THEME_DIR, "loading.html");
 
-const PRESETS = {
-  "kanagawa-wave": {
-    agentAvatar: {
-      bgStops: ["#FAF7E6", "#F6ECC9", "#EBE3CC"],
-      iconStops: ["#1F6E97", "#285C84", "#0E3252"],
-    },
-    dark: {
-      chromeBg: "#131720",
-      chromeFg: "#EAE6D3",
-      primary: "#E6C384",
-      accentBlue: "#7E9CD8",
-      accentAqua: "#7AA89F",
-      accentGreen: "#98BB6C",
-      accentPink: "#D27E99",
-      accentViolet: "#957FB8",
-      accentOrange: "#FFA066",
-      text: "#EAE6D3",
-      textMuted: "#CFC8A3",
-      textSubtle: "#8A8980",
-      surfaceBase: "#11161F",
-      sidebarBase: "#0E121A",
-      overlayBase: "#0F141D",
-      scrimBase: "#0B0F17",
-      selection: "#2D4F67",
-    },
-    light: {
-      chromeBg: "#E5DDB0",
-      chromeFg: "#3E3E4C",
-      primary: "#43436C",
-      text: "#3E3E4C",
-      textMuted: "#625F53",
-      paper0: "#D5CEA3",
-      paper1: "#DCD5AC",
-      paper2: "#E5DDB0",
-      paper3: "#F2ECBC",
-      surfaceBase: "#F7F3D6",
-      sidebarBase: "#EBE5C2",
-      overlayBase: "#F2ECBC",
-      scrimBase: "#F2ECBC",
-    },
-  },
-  "kanagawa-dragon": {
-    agentAvatar: {
-      bgStops: ["#F3ECD8", "#E6D9B8", "#D8C89E"],
-      iconStops: ["#8EA4A2", "#625E5A", "#1D1C19"],
-    },
-    dark: {
-      chromeBg: "#151412",
-      chromeFg: "#C5C9C5",
-      primary: "#C4B28A",
-      accentBlue: "#8BA4B0",
-      accentAqua: "#8EA4A2",
-      accentGreen: "#87A987",
-      accentPink: "#C4746E",
-      accentViolet: "#8992A7",
-      accentOrange: "#B6927B",
-      text: "#C5C9C5",
-      textMuted: "#A6A69C",
-      textSubtle: "#737C73",
-      surfaceBase: "#181614",
-      sidebarBase: "#131210",
-      overlayBase: "#1A1815",
-      scrimBase: "#100F0E",
-      selection: "#2D4F67",
-    },
-    light: {
-      chromeBg: "#E6DEC8",
-      chromeFg: "#3A3832",
-      primary: "#4D699B",
-      text: "#3A3832",
-      textMuted: "#686459",
-      paper0: "#D2C9AE",
-      paper1: "#DCD4BC",
-      paper2: "#E6DEC8",
-      paper3: "#F3ECD8",
-      surfaceBase: "#F5EFE0",
-      sidebarBase: "#EAE2CE",
-      overlayBase: "#F3ECD8",
-      scrimBase: "#F3ECD8",
-    },
-  },
-  "sakura-dusk": {
-    agentAvatar: {
-      bgStops: ["#FCECF2", "#F7D9E4", "#ECC3D3"],
-      iconStops: ["#957FB8", "#7E5A88", "#4A2E56"],
-    },
-    dark: {
-      chromeBg: "#171421",
-      chromeFg: "#F1E8EE",
-      primary: "#E6A9BD",
-      accentBlue: "#A3B8EF",
-      accentAqua: "#9CD5C9",
-      accentGreen: "#A7C986",
-      accentPink: "#D27E99",
-      accentViolet: "#B69EE0",
-      accentOrange: "#F3AE82",
-      text: "#F1E8EE",
-      textMuted: "#D4C3CF",
-      textSubtle: "#8E7E8B",
-      surfaceBase: "#1B1626",
-      sidebarBase: "#14101D",
-      overlayBase: "#1D1729",
-      scrimBase: "#120E1A",
-      selection: "#47325C",
-    },
-    light: {
-      chromeBg: "#F3E4EA",
-      chromeFg: "#3E3442",
-      primary: "#7D486D",
-      text: "#3E3442",
-      textMuted: "#6F5F6D",
-      paper0: "#E4CED7",
-      paper1: "#ECD9E1",
-      paper2: "#F3E4EA",
-      paper3: "#FAF0F4",
-      surfaceBase: "#FCF5F8",
-      sidebarBase: "#F4E7EC",
-      overlayBase: "#FAF0F4",
-      scrimBase: "#FAF0F4",
-    },
-  },
-  "midnight-aqua": {
-    agentAvatar: {
-      bgStops: ["#E6F7F5", "#CBECE8", "#B4DFDA"],
-      iconStops: ["#1E7898", "#185978", "#0B354D"],
-    },
-    dark: {
-      chromeBg: "#0D1520",
-      chromeFg: "#E1EEF4",
-      primary: "#73DACA",
-      accentBlue: "#7AA2F7",
-      accentAqua: "#7DCFFF",
-      accentGreen: "#9ECE6A",
-      accentPink: "#F7768E",
-      accentViolet: "#BB9AF7",
-      accentOrange: "#FF9E64",
-      text: "#E1EEF4",
-      textMuted: "#B7CBD9",
-      textSubtle: "#6E8599",
-      surfaceBase: "#0F1926",
-      sidebarBase: "#0B121C",
-      overlayBase: "#101B29",
-      scrimBase: "#091019",
-      selection: "#1E425E",
-    },
-    light: {
-      chromeBg: "#DCECEF",
-      chromeFg: "#243746",
-      primary: "#1C6B78",
-      text: "#243746",
-      textMuted: "#516978",
-      paper0: "#C5DDE2",
-      paper1: "#D1E5E9",
-      paper2: "#DCECEF",
-      paper3: "#EDF6F8",
-      surfaceBase: "#F3FAFB",
-      sidebarBase: "#E3F0F3",
-      overlayBase: "#EDF6F8",
-      scrimBase: "#EDF6F8",
-    },
-  },
+const FLAG_ONLY = new Set([
+  "help",
+  "list-presets",
+  "list-profiles",
+  "dry-run",
+  "no-wallpaper",
+  "seed-only",
+]);
+
+const FX_MAP = {
+  "wp-blur": "blur",
+  "wp-brightness": "brightness",
+  "wp-contrast": "contrast",
+  "wp-saturate": "saturate",
+  "wp-opacity": "opacity",
+  "wp-scale": "scale",
+  "scrim-opacity": "scrimOpacity",
 };
 
-const MIME_MAP = {
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".webp": "image/webp",
-  ".gif": "image/gif",
-  ".bmp": "image/bmp",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
+const SURF_MAP = {
+  "sidebar-opacity": "sidebarOpacity",
+  "panel-opacity": "panelOpacity",
+  "chat-opacity": "chatOpacity",
+  "user-bubble-opacity": "userBubbleOpacity",
+  "composer-opacity": "composerOpacity",
+  "code-opacity": "codeOpacity",
+  "editor-opacity": "editorOpacity",
+  "overlay-opacity": "overlayOpacity",
+  "titlebar-opacity": "titlebarOpacity",
+  "glass-blur": "glassBlur",
+  "glass-saturate": "glassSaturate",
+  "panel-radius": "panelRadius",
+  "card-radius": "cardRadius",
+  "composer-radius": "composerRadius",
+  "bubble-radius": "bubbleRadius",
 };
 
-function hexToRgb(hex) {
-  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
-  if (!m) return null;
-  const n = parseInt(m[1], 16);
-  return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
-}
+const VALUE_OPTIONS = new Set([
+  "profile",
+  "save-profile",
+  "preset",
+  "wallpaper",
+  "wallpaper-light",
+  "wallpaper-pos",
+  "wallpaper-pos-light",
+  "wallpaper-fit",
+  "scrim-style",
+  "user-avatar",
+  "agent-avatar",
+  "user-avatar-visible",
+  "agent-avatar-visible",
+  "avatar-size",
+  "user-avatar-size",
+  "agent-avatar-size",
+  "avatar-radius",
+  "user-avatar-radius",
+  "agent-avatar-radius",
+  "avatar-rotate",
+  "user-avatar-rotate",
+  "agent-avatar-rotate",
+  "dark-primary",
+  "dark-blue",
+  "dark-aqua",
+  "dark-surface",
+  "dark-chrome",
+  "dark-sidebar",
+  "dark-overlay",
+  "dark-scrim",
+  "dark-selection",
+  "light-primary",
+  "light-chrome",
+  "light-surface",
+  "ui-font",
+  "mono-font",
+  "chat-font-size",
+  "code-font-size",
+  "line-height",
+  "loading-title",
+  "loading-subtitle",
+  "loading-style",
+  "loading-show-emblem",
+  "loading-show-progress",
+  "studio-pill",
+  "studio-pill-pos",
+  "studio-lang",
+  ...Object.keys(FX_MAP),
+  ...Object.keys(SURF_MAP),
+]);
 
-function resolveAssetPath(p) {
-  if (!p || /^(KEEP_EMBEDDED|SVG_STAR|NONE|off|false)$/i.test(String(p).trim())) return null;
-  if (/^data:|^url\(/i.test(p)) return p;
-  return path.isAbsolute(p) ? p : path.resolve(THEME_DIR, p);
-}
+function printUsage() {
+  console.log(`Usage: node scripts/apply_kanagawa_config.js [options]
 
-function fileToDataUrl(filePath) {
-  if (/^data:/i.test(filePath)) return `url("${filePath}")`;
-  if (/^url\(/i.test(filePath)) return filePath;
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`Image file not found: ${filePath}`);
-  }
-  const ext = path.extname(filePath).toLowerCase();
-  const mime = MIME_MAP[ext];
-  if (!mime) {
-    throw new Error(`Unsupported image extension "${ext}" for ${filePath}`);
-  }
-  const raw = fs.readFileSync(filePath);
-  if (ext === ".svg") {
-    return `url("data:image/svg+xml,${encodeURIComponent(raw.toString("utf8"))}")`;
-  }
-  return `url("data:${mime};base64,${raw.toString("base64")}")`;
-}
+Discovery & Utility:
+  -h, --help                     Show this help message and exit
+  --list-presets                 Print available built-in palette presets
+  --list-profiles                Print saved profiles in kanagawa-theme/profiles/
+  --seed-only                    Seed library/profiles & recompile CSS/HTML
+  --dry-run                      Compile without modifying files on disk
 
-function buildGeminiStarSvgUrl(bgStops, iconStops) {
-  const [b0, b1, b2] = bgStops && bgStops.length >= 3 ? bgStops : ["#FAF7E6", "#F6ECC9", "#EBE3CC"];
-  const [i0, i1, i2] = iconStops && iconStops.length >= 3 ? iconStops : ["#1F6E97", "#285C84", "#0E3252"];
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">` +
-    `<defs>` +
-    `<linearGradient id="kbg" x1="0%" y1="0%" x2="100%" y2="100%">` +
-    `<stop offset="0%" stop-color="${b0}"/><stop offset="55%" stop-color="${b1}"/><stop offset="100%" stop-color="${b2}"/>` +
-    `</linearGradient>` +
-    `<linearGradient id="kgem" x1="15%" y1="15%" x2="85%" y2="85%">` +
-    `<stop offset="0%" stop-color="${i0}"/><stop offset="52%" stop-color="${i1}"/><stop offset="100%" stop-color="${i2}"/>` +
-    `</linearGradient>` +
-    `</defs>` +
-    `<rect width="36" height="36" fill="url(#kbg)"/>` +
-    `<path d="M18 5.5 C18.35 13.6 22.4 17.65 30.5 18 C22.4 18.35 18.35 22.4 18 30.5 C17.65 22.4 13.6 18.35 5.5 18 C13.6 17.65 17.65 13.6 18 5.5 Z" fill="url(#kgem)"/>` +
-    `</svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-}
+Profiles & Presets:
+  --profile <id>                 Load profile by ID (preserving look settings)
+  --preset <id>                  Apply palette preset (${Object.keys(tb.PRESETS).join(", ")})
+  --save-profile <name>          Save resulting config as a custom profile
 
-function replaceCssVar(css, varName, value) {
-  const esc = varName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const re = new RegExp(`^([ \\t]*${esc}\\s*:\\s*)(.+?)(;[ \\t]*)$`, "m");
-  if (!re.test(css)) return css;
-  return css.replace(re, (_, prefix, _old, suffix) => `${prefix}${value}${suffix}`);
-}
+Wallpaper & Scrim:
+  --no-wallpaper                 Disable dark wallpaper (sets wallpaper="NONE")
+  --wallpaper <path|library:..>  Set dark wallpaper (or NONE / KEEP_EMBEDDED)
+  --wallpaper-light <spec>       Set light wallpaper (SAME / NONE / path / library:...)
+  --wallpaper-pos <pos>          CSS background-position for dark mode
+  --wallpaper-pos-light <pos>    CSS background-position for light mode (or SAME)
+  --wallpaper-fit <fit>          cover | contain | auto | "100% 100%"
+  --wp-blur <0-40>               Blur radius in px
+  --wp-brightness <20-200>       Brightness percentage
+  --wp-contrast <30-200>         Contrast percentage
+  --wp-saturate <0-250>          Saturation percentage
+  --wp-opacity <0-100>           Wallpaper opacity percentage
+  --wp-scale <100-200>           Wallpaper scale percentage
+  --scrim-opacity <0-100>        Scrim veil opacity percentage
+  --scrim-style <style>          none | directional | solid | uniform | vignette | gradient
 
-function buildSurfaceOverrideBlock(cfg) {
-  const def = PRESETS["kanagawa-wave"];
-  const d = cfg.dark;
-  const l = cfg.light;
-  const changed =
-    JSON.stringify(d) !== JSON.stringify(def.dark) ||
-    JSON.stringify(l) !== JSON.stringify(def.light);
+Surfaces, Radii & Glass:
+  --sidebar-opacity <0-100>      --panel-opacity <0-100>       --chat-opacity <0-100>
+  --user-bubble-opacity <0-100>  --composer-opacity <0-100>    --code-opacity <0-100>
+  --editor-opacity <0-100>       --overlay-opacity <45-100>    --titlebar-opacity <0-100>
+  --glass-blur <0-32>            --glass-saturate <80-220>
+  --panel-radius <0-32>          --card-radius <0-32>
+  --composer-radius <0-32>       --bubble-radius <0-32>
 
-  if (!changed) return "";
+Avatars:
+  --user-avatar <spec>           --agent-avatar <spec> (NONE | SVG_STAR | path | library:..)
+  --user-avatar-visible <bool>   --agent-avatar-visible <bool>
+  --avatar-size <18-64>          --user-avatar-size <18-64>    --agent-avatar-size <18-64>
+  --avatar-radius <0-50>         --user-avatar-radius <0-50>  --agent-avatar-radius <0-50>
+  --avatar-rotate <-45..45>      --user-avatar-rotate <-45..45> --agent-avatar-rotate <-45..45>
 
-  const dSurf = hexToRgb(d.surfaceBase) || "17, 22, 31";
-  const dSide = hexToRgb(d.sidebarBase) || "14, 18, 26";
-  const dOver = hexToRgb(d.overlayBase) || "15, 20, 29";
-  const dScrim = hexToRgb(d.scrimBase) || "11, 15, 23";
-  const dBlue = hexToRgb(d.accentBlue) || "126, 156, 216";
-  const dAqua = hexToRgb(d.accentAqua) || "122, 168, 159";
-  const dSel = hexToRgb(d.selection) || "45, 79, 103";
+Colors & Typography:
+  --dark-primary <hex>           --dark-blue <hex>             --dark-aqua <hex>
+  --dark-surface <hex>           --dark-chrome <hex>           --dark-sidebar <hex>
+  --dark-overlay <hex>           --dark-scrim <hex>            --dark-selection <hex>
+  --light-primary <hex>          --light-chrome <hex>          --light-surface <hex>
+  --ui-font <font-list>          --mono-font <font-list>
+  --chat-font-size <0|10-26>     --code-font-size <0|9-24>     --line-height <1.15-2.2>
 
-  const lSurf = hexToRgb(l.surfaceBase) || "247, 243, 214";
-  const lSide = hexToRgb(l.sidebarBase) || "235, 229, 194";
-  const lOver = hexToRgb(l.overlayBase) || "242, 236, 188";
-  const lScrim = hexToRgb(l.scrimBase) || "242, 236, 188";
-  const lPri = hexToRgb(l.primary) || "67, 67, 108";
-
-  return `/* === KANAGAWA-CUSTOM-SURFACE-START === */
-html { background-color: ${d.chromeBg} !important; }
-
-body:not(.theme-light),
-body[data-agy-theme]:not(.theme-light),
-body[data-agy-theme]:not(.theme-light) .agy-inset-shell {
-  --sidebar: rgba(${dSide}, 0.64) !important;
-  --sidebar-secondary: rgba(${dSel}, 0.72) !important;
-  --card: rgba(${dSurf}, 0.68) !important;
-  --card-border: rgba(${dBlue}, 0.16) !important;
-  --card-edge: rgba(${dAqua}, 0.14) !important;
-  --border: rgba(${dBlue}, 0.12) !important;
-  --glass: rgba(${dSurf}, 0.80) !important;
-  --glass-border: rgba(${dAqua}, 0.28) !important;
-  --onyx-frame: rgba(${dOver}, 0.84) !important;
-  --onyx-well: rgba(${dSel}, 0.45) !important;
-  --onyx-raised: rgba(${dSurf}, 0.90) !important;
-  --onyx-selected: rgba(${dSel}, 0.82) !important;
-}
-body:not(.theme-light)::before {
-  background-image:
-    radial-gradient(48% 46% at 86% 18%, rgba(${dScrim}, 0.14) 0%, rgba(${dScrim}, 0.54) 100%),
-    linear-gradient(108deg, rgba(${dScrim}, 0.56) 0%, rgba(${dScrim}, 0.40) 56%, rgba(${dScrim}, 0.22) 100%) !important;
-}
-body:not(.theme-light):not([data-has-browser-hole="true"]) .browser-hole-ancestor[data-side-panel-focus-scope="true"]:not([data-has-browser-hole="true"]),
-body:not(.theme-light) [data-main-content-body],
-body:not(.theme-light) [role="navigation"][aria-label="Sidebar"],
-body:not(.theme-light) [data-testid="conversation-list-sidebar"] {
-  background-color: rgba(${dSide}, 0.44) !important;
-  border-color: rgba(${dAqua}, 0.18) !important;
-}
-body:not(.theme-light) .agy-overlay,
-body:not(.theme-light) .surface-glass,
-body:not(.theme-light) [role="dialog"],
-body:not(.theme-light) [role="menu"],
-body:not(.theme-light) [role="listbox"] {
-  background-color: rgba(${dOver}, 0.96) !important;
-  border-color: rgba(${dBlue}, 0.18) !important;
-}
-
-body.theme-light,
-body.theme-light[data-agy-theme],
-body.theme-light[data-agy-theme] .agy-inset-shell {
-  --sidebar: rgba(${lSide}, 0.74) !important;
-  --card: rgba(${lSurf}, 0.78) !important;
-  --card-border: rgba(${lPri}, 0.14) !important;
-  --card-edge: rgba(${lPri}, 0.12) !important;
-  --border: rgba(${lPri}, 0.11) !important;
-  --glass: rgba(${lSurf}, 0.86) !important;
-  --glass-border: rgba(${lPri}, 0.20) !important;
-  --onyx-frame: rgba(${lOver}, 0.88) !important;
-  --onyx-raised: rgba(${lSurf}, 0.92) !important;
-}
-body.theme-light::before {
-  background-image:
-    radial-gradient(52% 48% at 86% 18%, rgba(${lScrim}, 0.36) 0%, rgba(${lScrim}, 0.72) 100%),
-    linear-gradient(180deg, rgba(${lScrim}, 0.56) 0%, rgba(${lScrim}, 0.72) 100%) !important;
-}
-body.theme-light .agy-overlay,
-body.theme-light .surface-glass,
-body.theme-light [role="dialog"],
-body.theme-light [role="menu"],
-body.theme-light [role="listbox"] {
-  background-color: rgba(${lOver}, 0.97) !important;
-  border-color: rgba(${lPri}, 0.24) !important;
-}
-/* === KANAGAWA-CUSTOM-SURFACE-END === */`;
-}
-
-function buildLoadingHtml(cfg) {
-  const d = cfg.dark;
-  const l = cfg.light;
-  const loading = cfg.loading || {};
-  const title = String(loading.title || "Antigravity").replace(/[<>&]/g, "");
-  const subtitle = String(loading.subtitle || "Preparing Kanagawa workspace...").replace(/[<>&]/g, "");
-  const dWaveRgb = hexToRgb(d.selection) || "45, 79, 103";
-  const dBlueRgb = hexToRgb(d.accentBlue) || "126, 156, 216";
-  const lPaperRgb = hexToRgb(l.paper3) || "242, 236, 188";
-  const lFgRgb = hexToRgb(l.chromeFg) || "62, 62, 76";
-
-  return `<!DOCTYPE html>
-<html data-mode="{{MODE}}">
-<head>
-<meta charset="utf-8">
-<style>
-  /* Generated by scripts/apply_kanagawa_config.js from kanagawa.config.json */
-  :root, html[data-mode="dark"] {
-    --bg: ${d.chromeBg};
-    --fg: ${d.chromeFg};
-    --muted: ${d.textMuted};
-    --accent: ${d.primary};
-    --wave1: ${d.selection};
-    --wave2: ${d.accentBlue};
-    --glow: rgba(${dWaveRgb}, 0.32);
-    --track: rgba(${dBlueRgb}, 0.16);
-  }
-  html[data-mode="light"] {
-    --bg: ${l.chromeBg};
-    --fg: ${l.chromeFg};
-    --muted: ${l.textMuted};
-    --accent: ${l.primary};
-    --wave1: ${l.primary};
-    --wave2: ${l.textMuted};
-    --glow: rgba(${lPaperRgb}, 0.72);
-    --track: rgba(${lFgRgb}, 0.14);
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: radial-gradient(circle at 50% 42%, var(--glow) 0%, var(--bg) 68%);
-    background-color: var(--bg);
-    color: var(--fg);
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    -webkit-app-region: drag;
-    -webkit-user-select: none;
-  }
-  .emblem {
-    width: 84px;
-    height: 84px;
-    margin-bottom: 20px;
-    animation: float 3.2s ease-in-out infinite;
-  }
-  .wave-back { animation: drift 4.5s ease-in-out infinite; transform-origin: center; }
-  .wave-front { animation: drift 3.4s ease-in-out infinite reverse; transform-origin: center; }
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-  }
-  @keyframes drift {
-    0%, 100% { transform: translateX(-2px); }
-    50% { transform: translateX(2px); }
-  }
-  .title {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.28em;
-    color: var(--muted);
-    margin-bottom: 14px;
-    text-transform: uppercase;
-  }
-  .bar {
-    width: 176px;
-    height: 3px;
-    border-radius: 999px;
-    background: var(--track);
-    overflow: hidden;
-    margin-bottom: 12px;
-  }
-  .bar-fill {
-    width: 48%;
-    height: 100%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, var(--wave1), var(--wave2), var(--accent));
-    animation: slide 1.7s ease-in-out infinite;
-  }
-  @keyframes slide {
-    0% { transform: translateX(-110%); }
-    100% { transform: translateX(220%); }
-  }
-  .sub {
-    font-size: 12px;
-    color: var(--muted);
-    opacity: 0.85;
-  }
-</style>
-</head>
-<body>
-  <svg class="emblem" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="48" cy="42" r="24" fill="var(--accent)" fill-opacity="0.16" stroke="var(--accent)" stroke-opacity="0.55" stroke-width="1.25"/>
-    <path d="M48 22C34 22 36.5 52 25.5 63.5C21.5 67.5 25.8 68.8 28.6 66.8C39.2 59.5 38.5 46.5 48 46.5C57.5 46.5 56.8 59.5 67.4 66.8C70.2 68.8 74.5 67.5 70.5 63.5C59.5 52 62 22 48 22Z" fill="var(--fg)" fill-opacity="0.92"/>
-    <path class="wave-back" d="M12 68C22 61 32 61 42 67C52 73 64 73 84 65" stroke="var(--wave2)" stroke-width="2" stroke-linecap="round" stroke-opacity="0.65"/>
-    <path class="wave-front" d="M16 74C28 68 38 75 50 71C62 67 71 70 80 74" stroke="var(--wave1)" stroke-width="2.2" stroke-linecap="round"/>
-  </svg>
-  <div class="title">${title}</div>
-  <div class="bar"><div class="bar-fill"></div></div>
-  <div class="sub">${subtitle}</div>
-</body>
-</html>
-`;
+Loading & Studio:
+  --loading-title <text>         --loading-subtitle <text>
+  --loading-style <style>        kanagawa-wave | minimal | terminal
+  --loading-show-emblem <bool>   --loading-show-progress <bool>
+  --studio-pill <bool>           --studio-pill-pos <pos>       --studio-lang <vi|en>`);
 }
 
 function parseArgs(argv) {
   const out = {};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (!a.startsWith("--")) continue;
-    const key = a.slice(2);
-    if (key === "list-presets") { out.listPresets = true; continue; }
-    if (key === "dry-run") { out.dryRun = true; continue; }
-    if (key === "no-wallpaper") { out.noWallpaper = true; continue; }
-    out[key] = argv[i + 1];
+    if (a === "-h" || a === "--help") {
+      out.help = true;
+      continue;
+    }
+    if (!a.startsWith("--")) {
+      throw new Error(`Unexpected positional argument: "${a}". Use --help for usage.`);
+    }
+    const raw = a.slice(2);
+    const eqIdx = raw.indexOf("=");
+    if (eqIdx !== -1) {
+      const key = raw.slice(0, eqIdx);
+      const val = raw.slice(eqIdx + 1);
+      if (FLAG_ONLY.has(key)) {
+        throw new Error(`Flag --${key} does not take a value`);
+      }
+      if (!VALUE_OPTIONS.has(key)) {
+        throw new Error(`Unknown option: --${key}. Use --help for usage.`);
+      }
+      out[key] = val;
+      continue;
+    }
+    if (FLAG_ONLY.has(raw)) {
+      out[raw] = true;
+      continue;
+    }
+    if (!VALUE_OPTIONS.has(raw)) {
+      throw new Error(`Unknown option: --${raw}. Use --help for usage.`);
+    }
+    if (i + 1 >= argv.length || (argv[i + 1].startsWith("--") && (FLAG_ONLY.has(argv[i + 1].slice(2)) || VALUE_OPTIONS.has(argv[i + 1].slice(2).split("=")[0])))) {
+      throw new Error(`Missing value for --${raw}`);
+    }
+    out[raw] = argv[i + 1];
     i++;
   }
   return out;
 }
 
-function main() {
-  const args = parseArgs(process.argv.slice(2));
-  if (args.listPresets) {
-    console.log("Available presets:", Object.keys(PRESETS).join(", "));
-    return;
-  }
-
-  const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
-
-  if (args.preset) {
-    const p = PRESETS[args.preset];
-    if (!p) throw new Error(`Unknown preset "${args.preset}". Valid: ${Object.keys(PRESETS).join(", ")}`);
-    cfg.preset = args.preset;
-    cfg.dark = Object.assign({}, cfg.dark, p.dark);
-    cfg.light = Object.assign({}, cfg.light, p.light);
-    cfg.agentAvatar = Object.assign({}, cfg.agentAvatar, {
-      bgStops: p.agentAvatar.bgStops,
-      iconStops: p.agentAvatar.iconStops,
-    });
-  }
-  if (args.noWallpaper) cfg.wallpaper = "NONE";
-  else if (args.wallpaper !== undefined) cfg.wallpaper = args.wallpaper;
-  if (args["wallpaper-pos"]) cfg.wallpaperPosition = args["wallpaper-pos"];
-  if (args["user-avatar"]) cfg.userAvatar = args["user-avatar"];
-  if (args["agent-avatar"]) {
-    cfg.agentAvatar = Object.assign({}, cfg.agentAvatar, { image: args["agent-avatar"] });
-  }
-  if (args["dark-primary"]) cfg.dark.primary = args["dark-primary"];
-  if (args["dark-blue"]) cfg.dark.accentBlue = args["dark-blue"];
-  if (args["dark-aqua"]) cfg.dark.accentAqua = args["dark-aqua"];
-  if (args["dark-surface"]) cfg.dark.surfaceBase = args["dark-surface"];
-  if (args["light-primary"]) cfg.light.primary = args["light-primary"];
-
-  let css = fs.readFileSync(CSS_PATH, "utf8");
-
-  // 1. Update :root palette & chrome vars
-  const varUpdates = {
-    "--kw-fujiWhite": cfg.dark.text,
-    "--kw-oldWhite": cfg.dark.textMuted,
-    "--kw-fujiGray": cfg.dark.textSubtle,
-    "--kw-waveBlue2": cfg.dark.selection,
-    "--kw-crystalBlue": cfg.dark.accentBlue,
-    "--kw-carpYellow": cfg.dark.primary,
-    "--kw-waveAqua": cfg.dark.accentAqua,
-    "--kw-springGreen": cfg.dark.accentGreen,
-    "--kw-sakuraPink": cfg.dark.accentPink,
-    "--kw-oniViolet": cfg.dark.accentViolet,
-    "--kw-surimiOrange": cfg.dark.accentOrange,
-    "--kl-white0": cfg.light.paper0,
-    "--kl-white1": cfg.light.paper1,
-    "--kl-white2": cfg.light.paper2,
-    "--kl-white3": cfg.light.paper3,
-    "--kl-ink1": cfg.light.text,
-    "--kl-ink2": cfg.light.primary,
-    "--kl-gray2": cfg.light.textMuted,
-    "--px-chrome-dark-bg": cfg.dark.chromeBg,
-    "--px-chrome-dark-fg": cfg.dark.chromeFg,
-    "--px-chrome-light-bg": cfg.light.chromeBg,
-    "--px-chrome-light-fg": cfg.light.chromeFg,
-  };
-  for (const [k, v] of Object.entries(varUpdates)) {
-    if (v) css = replaceCssVar(css, k, v);
-  }
-
-  // 2. Read existing embedded assets (from either new direct rules or legacy --kn-* vars)
-  const extractUrl = (patterns) => {
-    for (const re of patterns) {
-      const m = css.match(re);
-      if (m && m[1]) return m[1];
-    }
-    return null;
-  };
-  let wpUrl = extractUrl([
-    /\/\* === KANAGAWA-EMBEDDED-ASSETS-START === \*\/[\s\S]*?html::before\s*\{[\s\S]*?background-image:\s*(url\("[^"]+"\))/,
-    /^[ \t]*--kn-wallpaper\s*:\s*(url\("[^"]+"\))\s*;/m,
-  ]);
-  let uaUrl = extractUrl([
-    /\.agy-user-bubble-frame:has\(> \[data-testid="user-message-bubble"\]\)::before\s*\{\s*background-image:\s*(url\("[^"]+"\))\s*!important;/,
-    /^[ \t]*--kn-user-avatar\s*:\s*(url\("[^"]+"\))\s*;/m,
-  ]);
-  let aaUrl = extractUrl([
-    /\[data-testid="agent-response"\][^\{]*\{\s*background-image:\s*(url\("[^"]+"\))\s*!important;/,
-    /^[ \t]*--kn-gemini-avatar\s*:\s*(url\("[^"]+"\))\s*;/m,
-  ]);
-
-  const disableWallpaper = !cfg.wallpaper || /^(NONE|off|false)$/i.test(String(cfg.wallpaper).trim());
-  if (disableWallpaper) {
-    cfg.wallpaper = "NONE";
-    wpUrl = null;
-  } else {
-    const wpPath = resolveAssetPath(cfg.wallpaper);
-    if (wpPath) {
-      wpUrl = fileToDataUrl(wpPath);
-      if (!wpPath.startsWith(THEME_DIR + path.sep)) cfg.wallpaper = "KEEP_EMBEDDED";
-    }
-  }
-
-  const uaPath = resolveAssetPath(cfg.userAvatar);
-  if (uaPath) {
-    uaUrl = fileToDataUrl(uaPath);
-    if (!uaPath.startsWith(THEME_DIR + path.sep)) cfg.userAvatar = "KEEP_EMBEDDED";
-  }
-
-  const aa = cfg.agentAvatar || {};
-  const aaPath = resolveAssetPath(aa.image);
-  if (aaPath) {
-    aaUrl = fileToDataUrl(aaPath);
-    if (!aaPath.startsWith(THEME_DIR + path.sep)) cfg.agentAvatar.image = "KEEP_EMBEDDED";
-  } else if (aa.image === "SVG_STAR") {
-    aaUrl = buildGeminiStarSvgUrl(aa.bgStops, aa.iconStops);
-  }
-
-  // Strip old :root { --kn-* } asset block or prior KANAGAWA-EMBEDDED-ASSETS block
-  css = css.replace(/\n?\/\* Embedded wallpaper[^\n]*\*\/\s*:root\s*\{[\s\S]*?\}\s*$/, "");
-  css = css.replace(/\n?\/\* === KANAGAWA-EMBEDDED-ASSETS-START === \*\/[\s\S]*?\/\* === KANAGAWA-EMBEDDED-ASSETS-END === \*\/\s*/g, "");
-
-  // 3. Optional managed surface override block (empty when using default kanagawa-wave)
-  const surfaceBlock = buildSurfaceOverrideBlock(cfg);
-  const blockRe = /\n?\/\* === KANAGAWA-CUSTOM-SURFACE-START === \*\/[\s\S]*?\/\* === KANAGAWA-CUSTOM-SURFACE-END === \*\/\n?/;
-  css = css.replace(blockRe, "\n");
-  if (surfaceBlock) {
-    css = css.trimEnd() + "\n\n" + surfaceBlock;
-  }
-
-  // 4. Write direct asset rules (avoids Chromium's ~2MB CSS custom property limit for large wallpapers)
-  const wpPos = cfg.wallpaperPosition || "right top";
-  const assetRules = ["/* === KANAGAWA-EMBEDDED-ASSETS-START === */"];
-  if (wpUrl) {
-    assetRules.push(
-      `html::before {\n  content: "";\n  position: fixed;\n  inset: 0;\n  z-index: 0 !important;\n  pointer-events: none;\n  will-change: transform;\n  transform: translateZ(0);\n  background-image: ${wpUrl};\n  background-size: cover;\n  background-position: ${wpPos};\n  background-repeat: no-repeat;\n}`
-    );
-  } else {
-    const dBg = (cfg.dark && cfg.dark.chromeBg) || "#121720";
-    const lBg = (cfg.light && cfg.light.chromeBg) || "#ECE5BE";
-    assetRules.push(
-      `body:not(.theme-light)::before { background-color: ${dBg} !important; }\nbody.theme-light::before { background-color: ${lBg} !important; }`
-    );
-  }
-  if (aaUrl) {
-    assetRules.push(
-      `[data-testid="agent-response"] div[class~="px-2"][class~="py-1"]:has(> [data-markdown-root])::before {\n  background-image: ${aaUrl} !important;\n}`
-    );
-  }
-  if (uaUrl) {
-    assetRules.push(
-      `body .agy-user-bubble-frame:has(> [data-testid="user-message-bubble"])::before {\n  background-image: ${uaUrl} !important;\n}`
-    );
-  }
-  assetRules.push("/* === KANAGAWA-EMBEDDED-ASSETS-END === */");
-  css = css.trimEnd() + "\n\n" + assetRules.join("\n\n") + "\n";
-
-  // Sanity check balanced braces before writing
-  const openCount = (css.match(/\{/g) || []).length;
-  const closeCount = (css.match(/\}/g) || []).length;
-  if (openCount !== closeCount) {
-    throw new Error(`Refusing to write unbalanced CSS: open=${openCount} close=${closeCount}`);
-  }
-
-  const loadingHtml = buildLoadingHtml(cfg);
-
-  if (args.dryRun) {
-    console.log("[dry-run] CSS bytes:", Buffer.byteLength(css, "utf8"), "braces:", openCount, "/", closeCount);
-    console.log("[dry-run] loading.html bytes:", Buffer.byteLength(loadingHtml, "utf8"));
-    return;
-  }
-
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2) + "\n", "utf8");
-  fs.writeFileSync(CSS_PATH, css, "utf8");
-  fs.writeFileSync(LOADING_PATH, loadingHtml, "utf8");
-  console.log("[kanagawa] Applied config -> kanagawa.css (" + openCount + "/" + closeCount + " braces) & loading.html");
+function parseBool(v, flagName) {
+  const s = String(v).trim().toLowerCase();
+  if (/^(1|true|yes|on)$/.test(s)) return true;
+  if (/^(0|false|no|off)$/.test(s)) return false;
+  throw new Error(`Invalid boolean for --${flagName}: "${v}" (expected true/false)`);
 }
 
-main();
+function parseFiniteNumber(v, flagName) {
+  const s = String(v ?? "").trim();
+  if (!s) throw new Error(`Invalid numeric value for --${flagName}: "${v}"`);
+  const n = Number(s);
+  if (!Number.isFinite(n)) {
+    throw new Error(`Invalid numeric value for --${flagName}: "${v}"`);
+  }
+  return n;
+}
+
+function parseStrictHex(v, flagName) {
+  const hex = tb.sanitizeHex(v, null);
+  if (!hex) {
+    throw new Error(`Invalid hex color for --${flagName}: "${v}" (expected #RRGGBB or #RGB)`);
+  }
+  return hex;
+}
+
+function parseEnum(v, allowed, flagName) {
+  const s = String(v ?? "").trim();
+  if (!allowed.includes(s)) {
+    throw new Error(`Invalid value for --${flagName}: "${v}". Allowed: ${allowed.join(", ")}`);
+  }
+  return s;
+}
+
+function main() {
+  const args = parseArgs(process.argv.slice(2));
+
+  if (args.help) {
+    printUsage();
+    return;
+  }
+
+  if (args["list-presets"]) {
+    for (const [id, p] of Object.entries(tb.PRESETS)) {
+      console.log(`${id}\t${p.label}`);
+    }
+    return;
+  }
+
+  let cfg = tb.mergeConfig(JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8")));
+  if (!args["dry-run"]) {
+    tb.ensureCustomCssFile(THEME_DIR);
+    tb.ensureDefaultProfiles(THEME_DIR, cfg);
+  }
+
+  if (args["list-profiles"]) {
+    const profiles = tb.listProfiles(THEME_DIR);
+    for (const p of profiles) {
+      console.log(`${p.id}\t${p.name}\t${p.description}`);
+    }
+    return;
+  }
+
+  if (args["seed-only"]) {
+    const res = tb.applyThemeConfig(THEME_DIR, cfg, { dryRun: Boolean(args["dry-run"]) });
+    console.log(`[kanagawa] Seeded library & profiles -> ${res.braces.open}/${res.braces.close} braces`);
+    return;
+  }
+
+  if (args.profile) {
+    cfg = tb.loadProfile(THEME_DIR, args.profile, cfg).config;
+  }
+
+  if (args.preset) {
+    cfg = tb.applyPresetToConfig(cfg, args.preset);
+  }
+
+  if (args["no-wallpaper"]) cfg.wallpaper = "NONE";
+  else if (args.wallpaper !== undefined) cfg.wallpaper = args.wallpaper;
+  if (args["wallpaper-light"] !== undefined) cfg.wallpaperLight = args["wallpaper-light"];
+  if (args["wallpaper-pos"] !== undefined) cfg.wallpaperPosition = args["wallpaper-pos"];
+  if (args["wallpaper-pos-light"] !== undefined) cfg.wallpaperPositionLight = args["wallpaper-pos-light"];
+  if (args["wallpaper-fit"] !== undefined) {
+    cfg.wallpaperFit = parseEnum(args["wallpaper-fit"], ["cover", "contain", "auto", "100% 100%"], "wallpaper-fit");
+  }
+
+  for (const [flag, key] of Object.entries(FX_MAP)) {
+    if (args[flag] !== undefined) cfg.wallpaperEffects[key] = parseFiniteNumber(args[flag], flag);
+  }
+  if (args["scrim-style"] !== undefined) {
+    cfg.wallpaperEffects.scrimStyle = parseEnum(
+      args["scrim-style"].toLowerCase(),
+      ["none", "directional", "solid", "uniform", "vignette", "gradient"],
+      "scrim-style"
+    );
+  }
+
+  for (const [flag, key] of Object.entries(SURF_MAP)) {
+    if (args[flag] !== undefined) cfg.surfaces[key] = parseFiniteNumber(args[flag], flag);
+  }
+
+  if (args["user-avatar"] !== undefined) cfg.userAvatar = args["user-avatar"];
+  if (args["agent-avatar"] !== undefined) cfg.agentAvatar.image = args["agent-avatar"];
+  if (args["user-avatar-visible"] !== undefined) cfg.avatars.userVisible = parseBool(args["user-avatar-visible"], "user-avatar-visible");
+  if (args["agent-avatar-visible"] !== undefined) cfg.avatars.agentVisible = parseBool(args["agent-avatar-visible"], "agent-avatar-visible");
+
+  if (args["avatar-size"] !== undefined) {
+    const sz = parseFiniteNumber(args["avatar-size"], "avatar-size");
+    cfg.avatars.userSize = sz;
+    cfg.avatars.agentSize = sz;
+  }
+  if (args["user-avatar-size"] !== undefined) cfg.avatars.userSize = parseFiniteNumber(args["user-avatar-size"], "user-avatar-size");
+  if (args["agent-avatar-size"] !== undefined) cfg.avatars.agentSize = parseFiniteNumber(args["agent-avatar-size"], "agent-avatar-size");
+
+  if (args["avatar-radius"] !== undefined) {
+    const rad = parseFiniteNumber(args["avatar-radius"], "avatar-radius");
+    cfg.avatars.userRadius = rad;
+    cfg.avatars.agentRadius = rad;
+  }
+  if (args["user-avatar-radius"] !== undefined) cfg.avatars.userRadius = parseFiniteNumber(args["user-avatar-radius"], "user-avatar-radius");
+  if (args["agent-avatar-radius"] !== undefined) cfg.avatars.agentRadius = parseFiniteNumber(args["agent-avatar-radius"], "agent-avatar-radius");
+
+  if (args["avatar-rotate"] !== undefined) {
+    const rot = parseFiniteNumber(args["avatar-rotate"], "avatar-rotate");
+    cfg.avatars.userRotate = rot;
+    cfg.avatars.agentRotate = -rot;
+  }
+  if (args["user-avatar-rotate"] !== undefined) cfg.avatars.userRotate = parseFiniteNumber(args["user-avatar-rotate"], "user-avatar-rotate");
+  if (args["agent-avatar-rotate"] !== undefined) cfg.avatars.agentRotate = parseFiniteNumber(args["agent-avatar-rotate"], "agent-avatar-rotate");
+
+  if (args["dark-primary"] !== undefined) cfg.dark.primary = parseStrictHex(args["dark-primary"], "dark-primary");
+  if (args["dark-blue"] !== undefined) cfg.dark.accentBlue = parseStrictHex(args["dark-blue"], "dark-blue");
+  if (args["dark-aqua"] !== undefined) cfg.dark.accentAqua = parseStrictHex(args["dark-aqua"], "dark-aqua");
+  if (args["dark-surface"] !== undefined) cfg.dark.surfaceBase = parseStrictHex(args["dark-surface"], "dark-surface");
+  if (args["dark-chrome"] !== undefined) cfg.dark.chromeBg = parseStrictHex(args["dark-chrome"], "dark-chrome");
+  if (args["dark-sidebar"] !== undefined) cfg.dark.sidebarBase = parseStrictHex(args["dark-sidebar"], "dark-sidebar");
+  if (args["dark-overlay"] !== undefined) cfg.dark.overlayBase = parseStrictHex(args["dark-overlay"], "dark-overlay");
+  if (args["dark-scrim"] !== undefined) cfg.dark.scrimBase = parseStrictHex(args["dark-scrim"], "dark-scrim");
+  if (args["dark-selection"] !== undefined) cfg.dark.selection = parseStrictHex(args["dark-selection"], "dark-selection");
+  if (args["light-primary"] !== undefined) cfg.light.primary = parseStrictHex(args["light-primary"], "light-primary");
+  if (args["light-chrome"] !== undefined) cfg.light.chromeBg = parseStrictHex(args["light-chrome"], "light-chrome");
+  if (args["light-surface"] !== undefined) cfg.light.surfaceBase = parseStrictHex(args["light-surface"], "light-surface");
+
+  if (args["ui-font"] !== undefined) cfg.typography.uiFont = args["ui-font"];
+  if (args["mono-font"] !== undefined) cfg.typography.monoFont = args["mono-font"];
+  if (args["chat-font-size"] !== undefined) cfg.typography.chatFontSize = parseFiniteNumber(args["chat-font-size"], "chat-font-size");
+  if (args["code-font-size"] !== undefined) cfg.typography.codeFontSize = parseFiniteNumber(args["code-font-size"], "code-font-size");
+  if (args["line-height"] !== undefined) cfg.typography.lineHeight = parseFiniteNumber(args["line-height"], "line-height");
+
+  if (args["loading-title"] !== undefined) cfg.loading.title = args["loading-title"];
+  if (args["loading-subtitle"] !== undefined) cfg.loading.subtitle = args["loading-subtitle"];
+  if (args["loading-style"] !== undefined) {
+    cfg.loading.style = parseEnum(args["loading-style"].toLowerCase(), ["kanagawa-wave", "minimal", "terminal"], "loading-style");
+  }
+  if (args["loading-show-emblem"] !== undefined) cfg.loading.showEmblem = parseBool(args["loading-show-emblem"], "loading-show-emblem");
+  if (args["loading-show-progress"] !== undefined) cfg.loading.showProgress = parseBool(args["loading-show-progress"], "loading-show-progress");
+
+  if (args["studio-pill"] !== undefined) cfg.studio.showTriggerPill = parseBool(args["studio-pill"], "studio-pill");
+  if (args["studio-pill-pos"] !== undefined) cfg.studio.pillPosition = args["studio-pill-pos"];
+  if (args["studio-lang"] !== undefined) cfg.studio.language = parseEnum(args["studio-lang"].toLowerCase(), ["vi", "en"], "studio-lang");
+
+  if (args["save-profile"] !== undefined) {
+    const saveName = String(args["save-profile"]).trim();
+    if (!saveName) throw new Error("Profile name for --save-profile cannot be empty");
+    // Validate built-in protection before writing anything to kanagawa.css
+    const candidateId = tb.slugifyProfileId(saveName);
+    const existingProfiles = tb.listProfiles(THEME_DIR);
+    const conflict = existingProfiles.find((p) => p.id === candidateId && p.builtIn);
+    if (conflict) {
+      throw new Error(`Built-in profile "${candidateId}" cannot be overwritten; save under a new name.`);
+    }
+  }
+
+  const result = tb.applyThemeConfig(THEME_DIR, cfg, { dryRun: Boolean(args["dry-run"]) });
+
+  if (args["save-profile"] && !args["dry-run"]) {
+    const saved = tb.saveProfile(THEME_DIR, args["save-profile"], result.cfg);
+    result.cfg.activeProfile = saved.id;
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(result.cfg, null, 2) + "\n", "utf8");
+    console.log(`[kanagawa] Saved profile "${saved.name}" (${saved.id})`);
+  }
+
+  if (args["dry-run"]) {
+    console.log("[dry-run] CSS bytes:", Buffer.byteLength(result.css, "utf8"), "braces:", result.braces.open, "/", result.braces.close);
+    console.log("[dry-run] loading.html bytes:", Buffer.byteLength(result.loadingHtml, "utf8"));
+    return;
+  }
+
+  console.log(`[kanagawa] Applied config -> kanagawa.css (${result.braces.open}/${result.braces.close} braces) & loading.html`);
+}
+
+try {
+  main();
+} catch (err) {
+  console.error(`[kanagawa] Error: ${err && err.message ? err.message : String(err)}`);
+  process.exit(1);
+}
