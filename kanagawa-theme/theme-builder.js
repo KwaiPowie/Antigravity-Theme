@@ -623,7 +623,7 @@ function extractEmbeddedFromCss(css) {
       new RegExp(`^[ \\t]*--kn-wallpaper\\s*:\\s*${urlExpr}\\s*;`, "m"),
     ]),
     wpLightUrl: extractUrl(assetsBlock, [
-      new RegExp(`html:has\\(>\\s*body\\.theme-light\\)::before\\s*\\{[^}]*?background-image:\\s*${urlExpr}`),
+      new RegExp(`html:has\\(>\\s*body(?::is\\([^)]*\\)|\\.theme-light)\\)::before\\s*\\{[^}]*?background-image:\\s*${urlExpr}`),
     ]),
     uaUrl: extractUrl(assetsBlock, [
       new RegExp(`\\[data-testid="user-message-bubble"\\][^}{]*::before\\s*\\{[^}]*?background-image:\\s*${urlExpr}\\s*(?:!important)?\\s*;`),
@@ -1554,17 +1554,18 @@ function applyThemeConfig(themeDir, inputCfg, options = {}) {
     );
   }
 
+  const lightHtmlBeforeSel = "html:has(> body:is(.theme-light, .vs:not(.vs-dark), .hc-light))::before";
   if (wpLightMode === "custom" && wpLightUrl) {
     assetRules.push(
-      `html:has(> body.theme-light)::before {\n  will-change: transform, filter;\n  transform: translateZ(0) scale(var(--kn-wp-scale, 1)) !important;\n  filter: var(--kn-wp-filter, none) !important;\n  opacity: var(--kn-wp-opacity, 1) !important;\n  background-image: ${wpLightUrl} !important;\n  background-size: var(--kn-wp-size, cover) !important;\n  background-position: var(--kn-wp-pos-light, right top) !important;\n  background-repeat: no-repeat !important;\n}`
+      `${lightHtmlBeforeSel} {\n  will-change: transform, filter;\n  transform: translateZ(0) scale(var(--kn-wp-scale, 1)) !important;\n  filter: var(--kn-wp-filter, none) !important;\n  opacity: var(--kn-wp-opacity, 1) !important;\n  background-image: ${wpLightUrl} !important;\n  background-size: var(--kn-wp-size, cover) !important;\n  background-position: var(--kn-wp-pos-light, right top) !important;\n  background-repeat: no-repeat !important;\n}`
     );
   } else if (wpLightMode === "none" || !wpDark.url) {
     assetRules.push(
-      `html:has(> body.theme-light)::before {\n  opacity: 1 !important;\n  filter: none !important;\n  transform: none !important;\n  background-image: none !important;\n  background-color: rgb(var(--kn-l-chrome-rgb)) !important;\n}`
+      `${lightHtmlBeforeSel} {\n  opacity: 1 !important;\n  filter: none !important;\n  transform: none !important;\n  background-image: none !important;\n  background-color: rgb(var(--kn-l-chrome-rgb)) !important;\n}`
     );
   } else {
     assetRules.push(
-      `html:has(> body.theme-light)::before {\n  background-position: var(--kn-wp-pos-light, right top) !important;\n}`
+      `${lightHtmlBeforeSel} {\n  background-position: var(--kn-wp-pos-light, right top) !important;\n}`
     );
   }
 

@@ -229,7 +229,17 @@
   let pickingImage = false;
   let lastRenderedTab = null;
 
-  const initialModeIsLight = Boolean(document.body && document.body.classList.contains("theme-light"));
+  function isLightDomMode() {
+    const b = document.body;
+    if (!b) return false;
+    return (
+      b.classList.contains("theme-light") ||
+      (b.classList.contains("vs") && !b.classList.contains("vs-dark")) ||
+      b.classList.contains("hc-light")
+    );
+  }
+
+  const initialModeIsLight = isLightDomMode();
   const state = {
     config: null,
     draft: null,
@@ -1075,7 +1085,7 @@
     if (d) {
       titleBadge.textContent = d.activeProfile || d.preset || "custom";
     }
-    modeBadge.textContent = document.body && document.body.classList.contains("theme-light") ? "☀️ Light" : "🌙 Dark";
+    modeBadge.textContent = isLightDomMode() ? "☀️ Light" : "🌙 Dark";
     const anyDirty = state.dirty || state.customCssDirty;
     saveBtn.classList.toggle("dirty", anyDirty);
     saveBtn.textContent = anyDirty ? t("💾 Lưu*", "💾 Save*") : t("💾 Lưu", "💾 Save");
@@ -2437,7 +2447,7 @@
   let bodyObserver = null;
   if (document.body) {
     bodyObserver = new MutationObserver(() => {
-      modeBadge.textContent = document.body.classList.contains("theme-light") ? "☀️ Light" : "🌙 Dark";
+      modeBadge.textContent = isLightDomMode() ? "☀️ Light" : "🌙 Dark";
     });
     bodyObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
   }

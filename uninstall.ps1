@@ -14,7 +14,7 @@ $Backup    = Join-Path $Resources 'app.asar.pixel-backup'
 function Write-Step($msg) { Write-Host "[kanagawa] $msg" -ForegroundColor Cyan }
 function Fail($msg) { Write-Host "[kanagawa] ERROR / LOI: $msg" -ForegroundColor Red; exit 1 }
 
-$procs = @(Get-Process -Name 'Antigravity', 'language_server' -ErrorAction SilentlyContinue)
+$procs = @(Get-Process -Name 'Antigravity', 'Antigravity IDE', 'language_server' -ErrorAction SilentlyContinue)
 if ($procs.Count -gt 0) {
     if ($KillRunning) {
         Write-Step "Stopping running Antigravity / Dang dong Antigravity..."
@@ -129,6 +129,28 @@ if ($ExtraThemeName) {
         Write-Step "Removing $ExtraThemeName assets / Dang xoa thu muc $ExtraThemeName..."
         Remove-Item $ExtraDst -Recurse -Force -Confirm:$false
     }
+}
+
+# --- Restore Antigravity IDE (if patched) ---
+$IdeOutDir = Join-Path $env:LOCALAPPDATA 'Programs\Antigravity IDE\resources\app\out'
+$IdeMainJs = Join-Path $IdeOutDir 'main.js'
+$IdeMainBackup = "$IdeMainJs.pixel-backup"
+$IdeHookDst = Join-Path $IdeOutDir 'kanagawa-ide-hook.mjs'
+if (Test-Path $IdeMainBackup) {
+    Write-Step "Restoring Antigravity IDE main.js / Dang khoi phuc Antigravity IDE..."
+    Copy-Item $IdeMainBackup $IdeMainJs -Force
+    Remove-Item $IdeMainBackup -Force -Confirm:$false
+}
+elseif (Test-Path $IdeMainJs) {
+    $ideMainContent = [System.IO.File]::ReadAllText($IdeMainJs)
+    if ($ideMainContent.Contains('kanagawa-ide-hook.mjs')) {
+        Write-Step "Removing hook from Antigravity IDE main.js / Dang go hook khoi Antigravity IDE..."
+        $ideMainContent = [regex]::Replace($ideMainContent, '\r?\n/\* === KANAGAWA-IDE-HOOK-START === \*/[\s\S]*?/\* === KANAGAWA-IDE-HOOK-END === \*/\r?\n?', "`n")
+        [System.IO.File]::WriteAllText($IdeMainJs, $ideMainContent, (New-Object System.Text.UTF8Encoding($false)))
+    }
+}
+if (Test-Path $IdeHookDst) {
+    Remove-Item $IdeHookDst -Force -Confirm:$false
 }
 
 Write-Step "Done! Antigravity restored to stock. / Hoan tat! Antigravity da tro ve mac dinh."

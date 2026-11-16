@@ -4,6 +4,7 @@
 # ============================================================================
 param(
     [switch]$KillRunning,
+    [switch]$SkipIde,
     [string]$Theme = "kanagawa"
 )
 $ErrorActionPreference = 'Stop'
@@ -33,7 +34,7 @@ if (-not (Test-Path $Injector)) { Fail "patch\pixelTheme.js not found / Khong ti
 if (-not (Test-Path $ThemeSrc)) { Fail "$ThemeName folder not found / Khong tim thay thu muc $ThemeName." }
 
 # --- 1. Ensure Antigravity is closed before touching app.asar ---
-$procs = @(Get-Process -Name 'Antigravity', 'language_server' -ErrorAction SilentlyContinue)
+$procs = @(Get-Process -Name 'Antigravity', 'Antigravity IDE', 'language_server' -ErrorAction SilentlyContinue)
 if ($procs.Count -gt 0) {
     if ($KillRunning) {
         Write-Step "Stopping running Antigravity / Dang dong Antigravity..."
@@ -178,8 +179,28 @@ $ActiveConfig = @{ theme = $ThemeName } | ConvertTo-Json
 $ActiveConfigPath = Join-Path $Resources 'active-theme.json'
 [System.IO.File]::WriteAllText($ActiveConfigPath, $ActiveConfig, (New-Object System.Text.UTF8Encoding($false)))
 
+# --- 4. Link Antigravity IDE (if installed) to the same shared theme ---
+$IdeOutDir = Join-Path $env:LOCALAPPDATA 'Programs\Antigravity IDE\resources\app\out'
+$IdeMainJs = Join-Path $IdeOutDir 'main.js'
+$IdeHookSrc = Join-Path $PSScriptRoot 'patch\ideTheme.mjs'
+if (-not $SkipIde -and (Test-Path $IdeMainJs) -and (Test-Path $IdeHookSrc)) {
+    Write-Step "Linking Antigravity IDE to shared $ThemeName / Dang lien ket Antigravity IDE..."
+    $IdeHookDst = Join-Path $IdeOutDir 'kanagawa-ide-hook.mjs'
+    $IdeMainBackup = "$IdeMainJs.pixel-backup"
+    if (-not (Test-Path $IdeMainBackup)) {
+        Copy-Item $IdeMainJs $IdeMainBackup -Force
+    }
+    Copy-Item $IdeHookSrc $IdeHookDst -Force
+    $ideMainContent = [System.IO.File]::ReadAllText($IdeMainJs)
+    $ideMarker = '/* === KANAGAWA-IDE-HOOK-START === */ import "./kanagawa-ide-hook.mjs"; /* === KANAGAWA-IDE-HOOK-END === */'
+    if (-not $ideMainContent.Contains('kanagawa-ide-hook.mjs')) {
+        $ideMainContent = $ideMainContent.TrimEnd() + "`n" + $ideMarker + "`n"
+        [System.IO.File]::WriteAllText($IdeMainJs, $ideMainContent, (New-Object System.Text.UTF8Encoding($false)))
+    }
+}
+
 Write-Host ""
 Write-Host "  Kanagawa Theme installed! / Da cai dat Kanagawa Theme + Studio xong!" -ForegroundColor Green
-Write-Host "  - Open Antigravity, then press Ctrl+Alt+K (or click the floating Studio pill) to customize live!" -ForegroundColor White
-Write-Host "  - Mo lai Antigravity roi bam Ctrl+Alt+K (hoac nut Studio o goc duoi phai) de tuy bien truc tiep!" -ForegroundColor Cyan
+Write-Host "  - Open Antigravity (or Antigravity IDE), then press Ctrl+Alt+K (or click Studio pill) to customize live!" -ForegroundColor White
+Write-Host "  - Mo lai Antigravity (hoac Antigravity IDE) roi bam Ctrl+Alt+K de tuy bien truc tiep & dong bo ca 2 app!" -ForegroundColor Cyan
 Write-Host ""
