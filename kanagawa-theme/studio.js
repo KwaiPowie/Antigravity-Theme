@@ -1608,6 +1608,8 @@
             profileId: curMeta.id,
             name: curMeta.name,
             builtIn: Boolean(curMeta.builtIn),
+            preserveWallpaper: false,
+            preserveAvatars: false,
             config: d,
           });
           draftRevision++;
