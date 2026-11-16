@@ -1,134 +1,134 @@
 {
-  "id": "sakura-dusk",
-  "name": "Sakura Dusk",
-  "description": "Sakura Dusk palette",
-  "builtIn": true,
-  "preserveWallpaper": true,
-  "preserveAvatars": true,
-  "updatedAt": "2026-11-15T18:13:01.081Z",
-  "config": {
-    "schemaVersion": 2,
-    "activeProfile": "sakura-dusk",
-    "preset": "sakura-dusk",
-    "wallpaper": "KEEP_EMBEDDED",
-    "wallpaperLight": "SAME",
-    "wallpaperPosition": "right top",
-    "wallpaperPositionLight": "SAME",
-    "wallpaperFit": "cover",
-    "wallpaperEffects": {
-      "blur": 0,
-      "brightness": 100,
-      "contrast": 100,
-      "saturate": 100,
-      "opacity": 100,
-      "scale": 100,
-      "scrimOpacity": 75,
-      "scrimStyle": "directional"
-    },
-    "surfaces": {
-      "sidebarOpacity": 64,
-      "panelOpacity": 42,
-      "chatOpacity": 66,
-      "userBubbleOpacity": 58,
-      "composerOpacity": 44,
-      "codeOpacity": 72,
-      "editorOpacity": 64,
-      "overlayOpacity": 96,
-      "titlebarOpacity": 74,
-      "glassBlur": 0,
-      "glassSaturate": 130,
-      "panelRadius": 14,
-      "cardRadius": 12,
-      "composerRadius": 16,
-      "bubbleRadius": 16
-    },
-    "avatars": {
-      "userVisible": true,
-      "userSize": 36,
-      "userRadius": 18,
-      "userRotate": 18,
-      "agentVisible": true,
-      "agentSize": 36,
-      "agentRadius": 18,
-      "agentRotate": -18
-    },
-    "composer": {
-      "rimStart": "#9CD5C9",
-      "rimMid": "#F1E8EE",
-      "rimEnd": "#E6A9BD",
-      "innerStart": "#2A1F38",
-      "innerMid": "#1B1626",
-      "innerEnd": "#38212F",
-      "userBubbleStart": "#322347",
-      "userBubbleEnd": "#241934",
-      "userBubbleBorder": "#E6A9BD"
-    },
-    "typography": {
-      "uiFont": "",
-      "monoFont": "",
-      "chatFontSize": 0,
-      "codeFontSize": 0,
-      "lineHeight": 1.62
-    },
-    "userAvatar": "KEEP_EMBEDDED",
-    "agentAvatar": {
-      "image": "SVG_STAR",
-      "bgStops": [
-        "#FCECF2",
-        "#F7D9E4",
-        "#ECC3D3"
-      ],
-      "iconStops": [
-        "#957FB8",
-        "#7E5A88",
-        "#4A2E56"
-      ]
-    },
-    "dark": {
-      "chromeBg": "#171421",
-      "chromeFg": "#F1E8EE",
-      "primary": "#E6A9BD",
-      "accentBlue": "#A3B8EF",
-      "accentAqua": "#9CD5C9",
-      "accentGreen": "#A7C986",
-      "accentPink": "#D27E99",
-      "accentViolet": "#B69EE0",
-      "accentOrange": "#F3AE82",
-      "text": "#F1E8EE",
-      "textMuted": "#D4C3CF",
-      "textSubtle": "#8E7E8B",
-      "surfaceBase": "#1B1626",
-      "sidebarBase": "#14101D",
-      "overlayBase": "#1D1729",
-      "scrimBase": "#120E1A",
-      "selection": "#47325C"
-    },
-    "light": {
-      "chromeBg": "#F3E4EA",
-      "chromeFg": "#3E3442",
-      "primary": "#7D486D",
-      "text": "#3E3442",
-      "textMuted": "#6F5F6D",
-      "paper0": "#E4CED7",
-      "paper1": "#ECD9E1",
-      "paper2": "#F3E4EA",
-      "paper3": "#FAF0F4",
-      "surfaceBase": "#FCF5F8",
-      "sidebarBase": "#F4E7EC",
-      "overlayBase": "#FAF0F4",
-      "scrimBase": "#FAF0F4"
-    },
-    "loading": {
-      "title": "Antigravity",
-      "subtitle": "Ready for Sakura Dusk...",
-      "style": "kanagawa-wave",
-      "showEmblem": true,
-      "showProgress": true
-    },
-    "studio": {
-      "showTriggerPill": true,
-      "pillPosition": "bottom-right",
-      "language": "vi"
-    }
-  }
+    "id":  "sakura-dusk",
+    "name":  "Sakura Dusk",
+    "description":  "Sakura Dusk palette",
+    "builtIn":  true,
+    "preserveWallpaper":  false,
+    "preserveAvatars":  false,
+    "updatedAt":  "2026-11-16T04:17:03.745Z",
+    "config":  {
+                   "schemaVersion":  2,
+                   "activeProfile":  "sakura-dusk",
+                   "preset":  "sakura-dusk",
+                   "wallpaper":  "library:1222989-a1117729730a.jpg",
+                   "wallpaperLight":  "SAME",
+                   "wallpaperPosition":  "right top",
+                   "wallpaperPositionLight":  "SAME",
+                   "wallpaperFit":  "cover",
+                   "wallpaperEffects":  {
+                                            "blur":  0,
+                                            "brightness":  100,
+                                            "contrast":  100,
+                                            "saturate":  100,
+                                            "opacity":  100,
+                                            "scale":  100,
+                                            "scrimOpacity":  75,
+                                            "scrimStyle":  "directional"
+                                        },
+                   "surfaces":  {
+                                    "sidebarOpacity":  64,
+                                    "panelOpacity":  42,
+                                    "chatOpacity":  66,
+                                    "userBubbleOpacity":  58,
+                                    "composerOpacity":  44,
+                                    "codeOpacity":  72,
+                                    "editorOpacity":  64,
+                                    "overlayOpacity":  96,
+                                    "titlebarOpacity":  74,
+                                    "glassBlur":  0,
+                                    "glassSaturate":  130,
+                                    "panelRadius":  14,
+                                    "cardRadius":  12,
+                                    "composerRadius":  16,
+                                    "bubbleRadius":  16
+                                },
+                   "avatars":  {
+                                   "userVisible":  true,
+                                   "userSize":  36,
+                                   "userRadius":  18,
+                                   "userRotate":  18,
+                                   "agentVisible":  true,
+                                   "agentSize":  36,
+                                   "agentRadius":  18,
+                                   "agentRotate":  -18
+                               },
+                   "composer":  {
+                                    "rimStart":  "#9CD5C9",
+                                    "rimMid":  "#F1E8EE",
+                                    "rimEnd":  "#E6A9BD",
+                                    "innerStart":  "#2A1F38",
+                                    "innerMid":  "#1B1626",
+                                    "innerEnd":  "#38212F",
+                                    "userBubbleStart":  "#322347",
+                                    "userBubbleEnd":  "#241934",
+                                    "userBubbleBorder":  "#E6A9BD"
+                                },
+                   "typography":  {
+                                      "uiFont":  "",
+                                      "monoFont":  "",
+                                      "chatFontSize":  0,
+                                      "codeFontSize":  0,
+                                      "lineHeight":  1.62
+                                  },
+                   "userAvatar":  "library:e7b2ae35c84d1e6c6b-4bf6fe009c38.jpg",
+                   "agentAvatar":  {
+                                       "image":  "library:322c3c6aded62a0b9e-6133f1eda3e7.jpg",
+                                       "bgStops":  [
+                                                       "#FCECF2",
+                                                       "#F7D9E4",
+                                                       "#ECC3D3"
+                                                   ],
+                                       "iconStops":  [
+                                                         "#957FB8",
+                                                         "#7E5A88",
+                                                         "#4A2E56"
+                                                     ]
+                                   },
+                   "dark":  {
+                                "chromeBg":  "#171421",
+                                "chromeFg":  "#F1E8EE",
+                                "primary":  "#E6A9BD",
+                                "accentBlue":  "#A3B8EF",
+                                "accentAqua":  "#9CD5C9",
+                                "accentGreen":  "#A7C986",
+                                "accentPink":  "#D27E99",
+                                "accentViolet":  "#B69EE0",
+                                "accentOrange":  "#F3AE82",
+                                "text":  "#F1E8EE",
+                                "textMuted":  "#D4C3CF",
+                                "textSubtle":  "#8E7E8B",
+                                "surfaceBase":  "#1B1626",
+                                "sidebarBase":  "#14101D",
+                                "overlayBase":  "#1D1729",
+                                "scrimBase":  "#120E1A",
+                                "selection":  "#47325C"
+                            },
+                   "light":  {
+                                 "chromeBg":  "#F3E4EA",
+                                 "chromeFg":  "#3E3442",
+                                 "primary":  "#7D486D",
+                                 "text":  "#3E3442",
+                                 "textMuted":  "#6F5F6D",
+                                 "paper0":  "#E4CED7",
+                                 "paper1":  "#ECD9E1",
+                                 "paper2":  "#F3E4EA",
+                                 "paper3":  "#FAF0F4",
+                                 "surfaceBase":  "#FCF5F8",
+                                 "sidebarBase":  "#F4E7EC",
+                                 "overlayBase":  "#FAF0F4",
+                                 "scrimBase":  "#FAF0F4"
+                             },
+                   "loading":  {
+                                   "title":  "Antigravity",
+                                   "subtitle":  "Ready for Sakura Dusk...",
+                                   "style":  "kanagawa-wave",
+                                   "showEmblem":  true,
+                                   "showProgress":  true
+                               },
+                   "studio":  {
+                                  "showTriggerPill":  true,
+                                  "pillPosition":  "bottom-right",
+                                  "language":  "vi"
+                              }
+               }
 }

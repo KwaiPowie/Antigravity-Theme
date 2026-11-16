@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "activeProfile": "sakura-dusk",
+  "activeProfile": "cherry-blossom",
   "preset": "sakura-dusk",
   "wallpaper": "library:1222989-a1117729730a.jpg",
   "wallpaperLight": "SAME",
@@ -45,7 +45,7 @@
     "agentRotate": -18
   },
   "composer": {
-    "rimStart": "#9CD5C9",
+    "rimStart": "#77F8DC",
     "rimMid": "#F1E8EE",
     "rimEnd": "#E6A9BD",
     "innerStart": "#2A1F38",

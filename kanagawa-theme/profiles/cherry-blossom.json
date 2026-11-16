@@ -1,14 +1,14 @@
 {
-  "id": "tone-h-ng",
-  "name": "tone hồng",
+  "id": "cherry-blossom",
+  "name": "Cherry Blossom",
   "description": "",
   "builtIn": false,
   "preserveWallpaper": false,
   "preserveAvatars": false,
-  "updatedAt": "2026-11-16T02:25:58.036Z",
+  "updatedAt": "2026-11-16T04:21:58.505Z",
   "config": {
     "schemaVersion": 2,
-    "activeProfile": "tone-h-ng",
+    "activeProfile": "cherry-blossom",
     "preset": "sakura-dusk",
     "wallpaper": "library:1222989-a1117729730a.jpg",
     "wallpaperLight": "SAME",
