@@ -479,6 +479,7 @@ function mergeConfig(raw) {
   for (const key of ["chatFontSize", "codeFontSize", "lineHeight"]) {
     merged.typography[key] = pickFinite(merged.typography[key], def.typography[key]);
   }
+  merged.studio.language = String(merged.studio.language || "").trim().toLowerCase() === "en" ? "en" : "vi";
   return merged;
 }
 

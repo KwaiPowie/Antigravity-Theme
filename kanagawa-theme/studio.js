@@ -25,19 +25,23 @@
 
   const SURFACE_QUICK_PRESETS = [
     {
-      name: "Sắc nét (Mặc định)",
+      nameVi: "Sắc nét (Mặc định)",
+      nameEn: "Crisp (Default)",
       surfaces: { sidebarOpacity: 64, panelOpacity: 42, chatOpacity: 66, userBubbleOpacity: 58, composerOpacity: 44, codeOpacity: 72, editorOpacity: 64, overlayOpacity: 96, titlebarOpacity: 74, glassBlur: 0, glassSaturate: 130 },
     },
     {
-      name: "Kính mờ (Frosted)",
+      nameVi: "Kính mờ (Frosted)",
+      nameEn: "Frosted Glass",
       surfaces: { sidebarOpacity: 42, panelOpacity: 28, chatOpacity: 46, userBubbleOpacity: 44, composerOpacity: 36, codeOpacity: 58, editorOpacity: 50, overlayOpacity: 84, titlebarOpacity: 52, glassBlur: 14, glassSaturate: 155 },
     },
     {
-      name: "Siêu trong suốt",
+      nameVi: "Siêu trong suốt",
+      nameEn: "Ultra Translucent",
       surfaces: { sidebarOpacity: 28, panelOpacity: 16, chatOpacity: 40, userBubbleOpacity: 38, composerOpacity: 28, codeOpacity: 52, editorOpacity: 42, overlayOpacity: 80, titlebarOpacity: 38, glassBlur: 6, glassSaturate: 135 },
     },
     {
-      name: "Đậm dễ đọc",
+      nameVi: "Đậm dễ đọc",
+      nameEn: "Solid High-Contrast",
       surfaces: { sidebarOpacity: 86, panelOpacity: 82, chatOpacity: 88, userBubbleOpacity: 82, composerOpacity: 76, codeOpacity: 90, editorOpacity: 88, overlayOpacity: 98, titlebarOpacity: 90, glassBlur: 0, glassSaturate: 110 },
     },
   ];
@@ -207,6 +211,14 @@
   }
 
   // --- Bridge to Electron Main Process ---
+  function isEn() {
+    const d = state.draft || state.config;
+    return Boolean(d && d.studio && d.studio.language === "en");
+  }
+  function t(vi, en) {
+    return isEn() ? en : vi;
+  }
+
   let reqSeq = 1;
   const pending = new Map();
   let draftRevision = 0;
@@ -766,7 +778,7 @@
 
     .panel {
       position: fixed; bottom: 18px; right: 20px; z-index: 3;
-      width: 436px; max-width: calc(100vw - 24px); max-height: 84vh;
+      width: 460px; max-width: calc(100vw - 24px); max-height: 84vh;
       pointer-events: auto; display: none; flex-direction: column;
       border-radius: 16px; border: 1px solid rgba(126,156,216,0.28);
       background: rgba(14, 18, 27, 0.93);
@@ -806,9 +818,9 @@
       background: rgba(12, 16, 24, 0.55); overflow-x: auto;
     }
     .tab {
-      flex: 1; text-align: center; padding: 6px 6px; border-radius: 8px;
+      flex: 1; text-align: center; padding: 6px 4px; border-radius: 8px;
       border: 1px solid transparent; background: transparent; color: #9c9888;
-      font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;
+      font-size: 10.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
       transition: all 120ms ease;
     }
     .tab:hover { color: #EAE6D3; background: rgba(255,255,255,0.05); }
@@ -888,7 +900,7 @@
     .profile-card {
       border: 1px solid rgba(126,156,216,0.18); background: rgba(13, 18, 27, 0.72);
       border-radius: 10px; padding: 8px 9px; cursor: pointer; display: flex; flex-direction: column; gap: 5px;
-      transition: all 120ms ease; position: relative;
+      transition: all 120ms ease; position: relative; min-width: 0;
     }
     .profile-card:hover { border-color: rgba(230,195,132,0.55); transform: translateY(-1px); }
     .profile-card.active { border-color: #E6C384; background: rgba(45, 79, 103, 0.35); box-shadow: 0 0 0 1px rgba(230,195,132,0.25); }
@@ -987,6 +999,20 @@
   const panel = el("div", { class: "panel" });
   const titleBadge = el("span", { class: "badge", text: "kanagawa-wave" });
   const modeBadge = el("span", { class: "badge", text: "Dark" });
+  const langBtn = el("button", {
+    type: "button",
+    class: "icon-btn",
+    text: "🌐 VI",
+    title: "Switch language (VI / EN)",
+    onClick: () => {
+      const d = state.draft;
+      if (!d) return;
+      d.studio = d.studio || {};
+      d.studio.language = d.studio.language === "en" ? "vi" : "en";
+      commitDraft({ isCommit: true, forceDisk: true });
+      renderAll();
+    },
+  });
   const saveBtn = el("button", { type: "button", class: "icon-btn primary", text: "💾 Lưu" });
   const revertBtn = el("button", { type: "button", class: "icon-btn", text: "↺ Hoàn tác", title: "Hủy thay đổi chưa lưu" });
   const closeBtn = el("button", { type: "button", class: "icon-btn danger", text: "✕" });
@@ -997,23 +1023,23 @@
       titleBadge,
       modeBadge,
     ]),
-    el("div", { class: "hbtns" }, [revertBtn, saveBtn, closeBtn]),
+    el("div", { class: "hbtns" }, [langBtn, revertBtn, saveBtn, closeBtn]),
   ]);
 
   const TABS = [
-    ["profiles", "🎭 Hồ sơ"],
-    ["wallpaper", "🖼️ Hình nền"],
-    ["surfaces", "🫧 Kính & Mờ"],
-    ["colors", "🎨 Màu & Avatar"],
-    ["advanced", "⚙️ Nâng cao"],
+    ["profiles", "🎭 Hồ sơ", "🎭 Profiles"],
+    ["wallpaper", "🖼️ Hình nền", "🖼️ Wallpaper"],
+    ["surfaces", "🫧 Kính & Mờ", "🫧 Surfaces"],
+    ["colors", "🎨 Màu & Avatar", "🎨 Colors & Avatars"],
+    ["advanced", "⚙️ Nâng cao", "⚙️ Advanced"],
   ];
   const tabsBar = el("div", { class: "tabs" });
   const tabBtns = {};
-  for (const [id, label] of TABS) {
+  for (const [id, labelVi, labelEn] of TABS) {
     const b = el("button", {
       type: "button",
       class: "tab" + (state.activeTab === id ? " active" : ""),
-      text: label,
+      text: t(labelVi, labelEn),
       onClick: () => {
         state.activeTab = id;
         for (const [k, btn] of Object.entries(tabBtns)) btn.classList.toggle("active", k === id);
@@ -1026,8 +1052,8 @@
   }
 
   const body = el("div", { class: "body" });
-  const statusSpan = el("span", { class: "status-ok", text: "Sẵn sàng (Ctrl+Alt+K)" });
-  const shortcutHint = el("span", { text: "Phím tắt: Ctrl+Alt+K" });
+  const statusSpan = el("span", { class: "status-ok", text: t("Sẵn sàng (Ctrl+Alt+K)", "Ready (Ctrl+Alt+K)") });
+  const shortcutHint = el("span", { text: t("Phím tắt: Ctrl+Alt+K", "Shortcut: Ctrl+Alt+K") });
   const footer = el("div", { class: "footer" }, [statusSpan, shortcutHint]);
 
   panel.appendChild(header);
@@ -1052,8 +1078,20 @@
     modeBadge.textContent = document.body && document.body.classList.contains("theme-light") ? "☀️ Light" : "🌙 Dark";
     const anyDirty = state.dirty || state.customCssDirty;
     saveBtn.classList.toggle("dirty", anyDirty);
-    saveBtn.textContent = anyDirty ? "💾 Lưu*" : "💾 Lưu";
+    saveBtn.textContent = anyDirty ? t("💾 Lưu*", "💾 Save*") : t("💾 Lưu", "💾 Save");
+    revertBtn.textContent = t("↺ Hoàn tác", "↺ Revert");
+    revertBtn.title = t("Hủy thay đổi chưa lưu", "Discard unsaved changes");
     revertBtn.style.display = anyDirty ? "inline-flex" : "none";
+    langBtn.textContent = isEn() ? "🌐 EN" : "🌐 VI";
+    langBtn.title = t("Chuyển sang English (EN)", "Switch to Tiếng Việt (VI)");
+    pill.title = t("Mở Theme Studio (Ctrl+Alt+K)", "Open Theme Studio (Ctrl+Alt+K)");
+    shortcutHint.textContent = t("Phím tắt: Ctrl+Alt+K", "Shortcut: Ctrl+Alt+K");
+    if (!state.statusText || state.statusText === "Sẵn sàng (Ctrl+Alt+K)" || state.statusText === "Ready (Ctrl+Alt+K)") {
+      statusSpan.textContent = t("Sẵn sàng (Ctrl+Alt+K)", "Ready (Ctrl+Alt+K)");
+    }
+    for (const [id, labelVi, labelEn] of TABS) {
+      if (tabBtns[id]) tabBtns[id].textContent = t(labelVi, labelEn);
+    }
   }
 
   // --- Dragging Panel ---
@@ -1413,10 +1451,10 @@
   }
 
   function formatAssetLabel(val) {
-    if (!val || isNoneAsset(val)) return "Đã tắt";
-    if (val === "SAME") return "Dùng chung Dark";
-    if (val === "KEEP_EMBEDDED") return "Ảnh nhúng mặc định";
-    if (val === "SVG_STAR") return "Sao 4 cánh SVG";
+    if (!val || isNoneAsset(val)) return t("Đã tắt", "Disabled");
+    if (val === "SAME") return t("Dùng chung Dark", "Same as Dark");
+    if (val === "KEEP_EMBEDDED") return t("Ảnh nhúng mặc định", "Built-in embedded");
+    if (val === "SVG_STAR") return t("Sao 4 cánh SVG", "4-Point Star SVG");
     if (String(val).startsWith("library:")) return String(val).slice("library:".length);
     return String(val);
   }
@@ -1473,18 +1511,18 @@
         class: "profile-card" + (active ? " active" : ""),
         onClick: async () => {
           try {
-            setStatus(`Đang chuyển sang "${p.name}"...`, "busy");
+            setStatus(t(`Đang chuyển sang "${p.name}"...`, `Switching to "${p.name}"...`), "busy");
             const data = await sendCommand("load-profile", { profileId: p.id });
             draftRevision++;
             applyReceivedState(data, { force: true });
-            setStatus(`Đã bật hồ sơ "${p.name}"`, "ok");
+            setStatus(t(`Đã bật hồ sơ "${p.name}"`, `Activated "${p.name}"`), "ok");
           } catch (e) {
-            setStatus("Lỗi tải hồ sơ: " + e.message, "err");
+            setStatus(t("Lỗi tải hồ sơ: ", "Failed to load profile: ") + e.message, "err");
           }
         },
       }, [
         el("div", { class: "pname", text: (active ? "✓ " : "") + p.name }),
-        el("div", { class: "pdesc", text: p.description || (p.wallpaper === "NONE" ? "Nền trơn" : "Có hình nền") }),
+        el("div", { class: "pdesc", text: p.description || (p.wallpaper === "NONE" ? t("Nền trơn", "Solid background") : t("Có hình nền", "With wallpaper")) }),
         el("div", { class: "swatches" }, (p.swatch || []).map((c) => el("span", { class: "dot", style: { background: c } }))),
       ]);
       if (!p.builtIn) {
@@ -1492,15 +1530,15 @@
         card.appendChild(el("button", {
           type: "button",
           class: "pdel" + (isConfirming ? " confirming" : ""),
-          text: isConfirming ? "Xóa?" : "✕",
-          title: isConfirming ? "Bấm lần nữa để xác nhận xóa" : "Xóa hồ sơ",
+          text: isConfirming ? t("Xóa?", "Del?") : "✕",
+          title: isConfirming ? t("Bấm lần nữa để xác nhận xóa", "Click again to confirm delete") : t("Xóa hồ sơ", "Delete profile"),
           onClick: async (e) => {
             e.stopPropagation();
             if (state.confirmDeleteProfileId !== p.id || Date.now() > state.confirmDeleteProfileUntil) {
               state.confirmDeleteProfileId = p.id;
               state.confirmDeleteProfileUntil = Date.now() + 3500;
               renderBody();
-              setStatus(`Bấm lại nút Xóa để xóa "${p.name}"`, "busy");
+              setStatus(t(`Bấm lại nút Xóa để xóa "${p.name}"`, `Click Delete again to remove "${p.name}"`), "busy");
               return;
             }
             state.confirmDeleteProfileId = "";
@@ -1508,9 +1546,9 @@
             try {
               const data = await sendCommand("delete-profile", { profileId: p.id });
               applyReceivedState(data, { force: !state.dirty });
-              setStatus(`Đã xóa hồ sơ "${p.name}"`, "ok");
+              setStatus(t(`Đã xóa hồ sơ "${p.name}"`, `Deleted "${p.name}"`), "ok");
             } catch (err) {
-              setStatus("Lỗi xóa hồ sơ: " + err.message, "err");
+              setStatus(t("Lỗi xóa hồ sơ: ", "Delete error: ") + err.message, "err");
             }
           },
         }));
@@ -1521,32 +1559,32 @@
     const nameInput = el("input", {
       type: "text",
       value: state.newProfileName || "",
-      placeholder: "Tên hồ sơ mới (vd: Anime Glass)...",
+      placeholder: t("Tên hồ sơ mới (vd: Anime Glass)...", "New profile name (e.g. Anime Glass)..."),
       onInput: (e) => { state.newProfileName = e.target.value; },
     });
     const saveNewBtn = el("button", {
-      type: "button", class: "btn accent", text: "+ Lưu thành hồ sơ mới",
+      type: "button", class: "btn accent", text: t("+ Lưu thành hồ sơ mới", "+ Save as New Profile"),
       onClick: async () => {
         const name = nameInput.value.trim();
-        if (!name) { setStatus("Hãy nhập tên hồ sơ trước", "err"); return; }
+        if (!name) { setStatus(t("Hãy nhập tên hồ sơ trước", "Please enter a profile name first"), "err"); return; }
         const slugAttempt = name.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
         const builtInCollision = state.profiles.find(
           (p) => p.builtIn && (p.id === slugAttempt || String(p.name || "").toLowerCase() === name.toLowerCase())
         );
         if (builtInCollision) {
-          setStatus(`Tên trùng hồ sơ mặc định "${builtInCollision.name}" — hãy đặt tên khác`, "err");
+          setStatus(t(`Tên trùng hồ sơ mặc định "${builtInCollision.name}" — hãy đặt tên khác`, `Name conflicts with built-in "${builtInCollision.name}" — choose another`), "err");
           return;
         }
         try {
-          setStatus(`Đang lưu hồ sơ "${name}"...`, "busy");
+          setStatus(t(`Đang lưu hồ sơ "${name}"...`, `Saving "${name}"...`), "busy");
           const data = await sendCommand("save-profile", { name, config: d });
           state.newProfileName = "";
           nameInput.value = "";
           draftRevision++;
           applyReceivedState(data, { force: true });
-          setStatus(`Đã lưu hồ sơ "${name}"`, "ok");
+          setStatus(t(`Đã lưu hồ sơ "${name}"`, `Saved profile "${name}"`), "ok");
         } catch (e) {
-          setStatus("Lỗi lưu hồ sơ: " + e.message, "err");
+          setStatus(t("Lỗi lưu hồ sơ: ", "Save profile error: ") + e.message, "err");
         }
       },
     });
@@ -1557,15 +1595,15 @@
       type: "button",
       class: "btn gold",
       disabled: !canUpdateCurrent,
-      text: canUpdateCurrent ? "⟳ Cập nhật hồ sơ hiện tại" : "⟳ Chưa chọn hồ sơ",
-      title: canUpdateCurrent ? `Cập nhật "${curMeta.name}"` : "Hãy chọn hoặc tạo hồ sơ trước",
+      text: canUpdateCurrent ? t("⟳ Cập nhật hồ sơ hiện tại", "⟳ Update Current Profile") : t("⟳ Chưa chọn hồ sơ", "⟳ No Profile Selected"),
+      title: canUpdateCurrent ? t(`Cập nhật "${curMeta.name}"`, `Update "${curMeta.name}"`) : t("Hãy chọn hoặc tạo hồ sơ trước", "Select or create a profile first"),
       onClick: async () => {
         if (!curMeta) {
-          setStatus("Không có hồ sơ đang chọn — hãy dùng 'Lưu thành hồ sơ mới'", "err");
+          setStatus(t("Không có hồ sơ đang chọn — hãy dùng 'Lưu thành hồ sơ mới'", "No active profile — use 'Save as New Profile'"), "err");
           return;
         }
         try {
-          setStatus(`Đang cập nhật "${curMeta.name}"...`, "busy");
+          setStatus(t(`Đang cập nhật "${curMeta.name}"...`, `Updating "${curMeta.name}"...`), "busy");
           const data = await sendCommand("save-profile", {
             profileId: curMeta.id,
             name: curMeta.name,
@@ -1574,23 +1612,23 @@
           });
           draftRevision++;
           applyReceivedState(data, { force: true });
-          setStatus(`Đã cập nhật "${curMeta.name}"`, "ok");
+          setStatus(t(`Đã cập nhật "${curMeta.name}"`, `Updated "${curMeta.name}"`), "ok");
         } catch (e) {
-          setStatus("Lỗi cập nhật hồ sơ: " + e.message, "err");
+          setStatus(t("Lỗi cập nhật hồ sơ: ", "Update error: ") + e.message, "err");
         }
       },
     });
 
     const exportBtn = el("button", {
-      type: "button", class: "btn sm", text: "📋 Copy JSON hồ sơ",
+      type: "button", class: "btn sm", text: t("📋 Copy JSON hồ sơ", "📋 Copy Profile JSON"),
       onClick: () => {
         navigator.clipboard.writeText(JSON.stringify(d, null, 2))
-          .then(() => setStatus("Đã copy JSON cấu hình!", "ok"))
-          .catch((e) => setStatus("Không thể copy clipboard: " + e.message, "err"));
+          .then(() => setStatus(t("Đã copy JSON cấu hình!", "Copied config JSON!"), "ok"))
+          .catch((e) => setStatus(t("Không thể copy clipboard: ", "Clipboard copy failed: ") + e.message, "err"));
       },
     });
     const importBtn = el("button", {
-      type: "button", class: "btn sm", text: "📥 Dán JSON từ Clipboard",
+      type: "button", class: "btn sm", text: t("📥 Dán JSON từ Clipboard", "📥 Paste JSON from Clipboard"),
       onClick: async () => {
         try {
           const txt = await navigator.clipboard.readText();
@@ -1599,25 +1637,25 @@
           const candidate = isPlainObject(parsed.config) ? parsed.config : parsed;
           const knownKeys = ["schemaVersion", "preset", "wallpaper", "wallpaperEffects", "surfaces", "avatars", "composer", "typography", "dark", "light", "loading", "studio"];
           if (!knownKeys.some((k) => k in candidate)) {
-            setStatus("JSON không đúng định dạng cấu hình Kanagawa Studio", "err");
+            setStatus(t("JSON không đúng định dạng cấu hình Kanagawa Studio", "Invalid Kanagawa Studio JSON"), "err");
             return;
           }
-          state.draft = mergeImportedConfig(state.draft, candidate);
+          syncDraftFromConfig(mergeImportedConfig(state.draft, candidate));
           commitDraft({ isCommit: true, forceDisk: true });
           renderBody();
-          setStatus("Đã nhập JSON cấu hình!", "ok");
+          setStatus(t("Đã nhập JSON cấu hình!", "Imported config JSON!"), "ok");
         } catch (e) {
-          setStatus("Clipboard không phải JSON cấu hình hợp lệ", "err");
+          setStatus(t("Clipboard không phải JSON cấu hình hợp lệ", "Clipboard does not contain valid config JSON"), "err");
         }
       },
     });
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("div", { class: "sec-title" }, ["Chuyển nhanh 1 click", el("span", { text: `${state.profiles.length} hồ sơ` })]),
+      el("div", { class: "sec-title" }, [t("Chuyển nhanh 1 click", "1-Click Switch"), el("span", { text: t(`${state.profiles.length} hồ sơ`, `${state.profiles.length} profiles`) })]),
       list,
     ]));
     body.appendChild(el("div", { class: "sec" }, [
-      el("div", { class: "sec-title", text: "Lưu & Chia sẻ Combo" }),
+      el("div", { class: "sec-title", text: t("Lưu & Chia sẻ Combo", "Save & Share Combo") }),
       nameInput,
       el("div", { class: "grid2" }, [saveNewBtn, updateCurBtn]),
       el("div", { class: "grid2" }, [exportBtn, importBtn]),
@@ -1628,11 +1666,11 @@
     const isLightTab = state.wpModeTab === "light";
     const seg = el("div", { class: "seg" }, [
       el("button", {
-        type: "button", class: !isLightTab ? "active" : "", text: "🌙 Dark Mode (Chính)",
+        type: "button", class: !isLightTab ? "active" : "", text: t("🌙 Dark Mode (Chính)", "🌙 Dark Mode (Primary)"),
         onClick: () => { state.wpModeTab = "dark"; renderBody(); },
       }),
       el("button", {
-        type: "button", class: isLightTab ? "active" : "", text: "☀️ Light Mode (Riêng)",
+        type: "button", class: isLightTab ? "active" : "", text: t("☀️ Light Mode (Riêng)", "☀️ Light Mode (Custom)"),
         onClick: () => { state.wpModeTab = "light"; renderBody(); },
       }),
     ]);
@@ -1642,7 +1680,7 @@
 
     const dropzone = el("div", {
       class: "dropzone",
-      text: "📂 Kéo thả ảnh (.png, .jpg, .webp, .avif, .gif) ≤15MB vào đây hoặc bấm để chọn",
+      text: t("📂 Kéo thả ảnh (.png, .jpg, .webp, .avif, .gif) ≤15MB vào đây hoặc bấm để chọn", "📂 Drag & drop image (.png, .jpg, .webp, .avif, .gif) ≤15MB or click to browse"),
       onClick: () => pickNativeImage(targetField),
     });
     dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
@@ -1655,15 +1693,15 @@
     });
 
     const wpBtns = [
-      el("button", { type: "button", class: "btn accent", text: "📁 Chọn ảnh", onClick: () => pickNativeImage(targetField) }),
+      el("button", { type: "button", class: "btn accent", text: t("📁 Chọn ảnh", "📁 Pick Image"), onClick: () => pickNativeImage(targetField) }),
       el("button", {
-        type: "button", class: "btn" + (currentVal === "NONE" ? " active" : ""), text: "🚫 Tắt hình nền",
+        type: "button", class: "btn" + (currentVal === "NONE" ? " active" : ""), text: t("🚫 Tắt hình nền", "🚫 Disable Wallpaper"),
         onClick: () => { d[targetField] = "NONE"; commitDraft({ isCommit: true, forceDisk: true }); renderBody(); },
       }),
     ];
     if (isLightTab) {
       wpBtns.push(el("button", {
-        type: "button", class: "btn" + (currentVal === "SAME" ? " active" : ""), text: "🔗 Dùng chung Dark",
+        type: "button", class: "btn" + (currentVal === "SAME" ? " active" : ""), text: t("🔗 Dùng chung Dark", "🔗 Same as Dark"),
         onClick: () => { d.wallpaperLight = "SAME"; commitDraft({ isCommit: true, forceDisk: true }); renderBody(); },
       }));
     }
@@ -1671,7 +1709,7 @@
     // Library Grid
     const libGrid = el("div", { class: "lib-grid" });
     if (!state.library.length) {
-      libGrid.appendChild(el("div", { style: { gridColumn: "1 / -1", color: "#8A8980", textAlign: "center", padding: "8px" }, text: "Chưa có ảnh nào trong thư viện." }));
+      libGrid.appendChild(el("div", { style: { gridColumn: "1 / -1", color: "#8A8980", textAlign: "center", padding: "8px" }, text: t("Chưa có ảnh nào trong thư viện.", "No images in library yet.") }));
     } else {
       for (const item of state.library) {
         const thumbUrl = state.thumbs[item.id];
@@ -1688,16 +1726,16 @@
             ? el("img", { src: thumbUrl, alt: item.filename })
             : el("div", { class: "lib-fallback", text: item.filename }),
           el("button", {
-            type: "button", class: "lib-del", text: "✕", title: "Xóa khỏi thư viện",
+            type: "button", class: "lib-del", text: "✕", title: t("Xóa khỏi thư viện", "Remove from library"),
             onClick: async (e) => {
               e.stopPropagation();
               try {
                 const data = await sendCommand("delete-library-asset", { assetId: item.id, config: state.draft });
                 draftRevision++;
                 applyReceivedState(data, { force: true });
-                setStatus("Đã xóa ảnh khỏi thư viện", "ok");
+                setStatus(t("Đã xóa ảnh khỏi thư viện", "Removed image from library"), "ok");
               } catch (err) {
-                setStatus("Lỗi xóa ảnh: " + err.message, "err");
+                setStatus(t("Lỗi xóa ảnh: ", "Delete error: ") + err.message, "err");
               }
             },
           }),
@@ -1725,14 +1763,14 @@
     ));
 
     const posColChildren = [
-      el("span", { style: { fontSize: "11px", color: "#CFC8A3" }, text: isLightTab ? "Vị trí Light" : "Vị trí" }),
+      el("span", { style: { fontSize: "11px", color: "#CFC8A3" }, text: isLightTab ? t("Vị trí Light", "Light Position") : t("Vị trí", "Position") }),
       posGrid,
     ];
     if (isLightTab) {
       posColChildren.push(el("button", {
         type: "button",
         class: "btn sm" + (isPosSame ? " active" : ""),
-        text: "🔗 Theo Dark",
+        text: t("🔗 Theo Dark", "🔗 Follow Dark"),
         style: { marginTop: "3px", width: "90px" },
         onClick: () => {
           d.wallpaperPositionLight = "SAME";
@@ -1745,10 +1783,10 @@
     const fitSelect = el("select", {
       onChange: (e) => { d.wallpaperFit = e.target.value; commitDraft(true); },
     }, [
-      el("option", { value: "cover", text: "Cover (Phủ kín, giữ tỉ lệ)" }),
-      el("option", { value: "contain", text: "Contain (Hiện toàn bộ ảnh)" }),
-      el("option", { value: "100% 100%", text: "Stretch (Kéo giãn vừa màn hình)" }),
-      el("option", { value: "auto", text: "Auto (Kích thước gốc)" }),
+      el("option", { value: "cover", text: t("Cover (Phủ kín, giữ tỉ lệ)", "Cover (Fill & crop)") }),
+      el("option", { value: "contain", text: t("Contain (Hiện toàn bộ ảnh)", "Contain (Show full image)") }),
+      el("option", { value: "100% 100%", text: t("Stretch (Kéo giãn vừa màn hình)", "Stretch (100% × 100%)") }),
+      el("option", { value: "auto", text: t("Auto (Kích thước gốc)", "Auto (Original size)") }),
     ]);
     fitSelect.value = d.wallpaperFit || "cover";
 
@@ -1756,11 +1794,11 @@
     const scrimSel = el("select", {
       onChange: (e) => { fx.scrimStyle = e.target.value; commitDraft(true); },
     }, [
-      el("option", { value: "directional", text: "Sáng góc phải (Kanagawa)" }),
-      el("option", { value: "gradient", text: "Chuyển sắc dọc (Gradient)" }),
-      el("option", { value: "solid", text: "Tối đều toàn màn hình (Solid)" }),
-      el("option", { value: "vignette", text: "Tối viền (Vignette)" }),
-      el("option", { value: "none", text: "Không phủ tối" }),
+      el("option", { value: "directional", text: t("Sáng góc phải (Kanagawa)", "Directional (Bright top-right)") }),
+      el("option", { value: "gradient", text: t("Chuyển sắc dọc (Gradient)", "Vertical Gradient") }),
+      el("option", { value: "solid", text: t("Tối đều toàn màn hình (Solid)", "Uniform Solid") }),
+      el("option", { value: "vignette", text: t("Tối viền (Vignette)", "Vignette (Edge darken)") }),
+      el("option", { value: "none", text: t("Không phủ tối", "None (No scrim)") }),
     ]);
     const normalizedScrim = fx.scrimStyle === "uniform" ? "solid" : (fx.scrimStyle || "directional");
     scrimSel.value = normalizedScrim;
@@ -1768,7 +1806,7 @@
     body.appendChild(el("div", { class: "sec" }, [
       seg,
       el("div", { class: "row" }, [
-        el("span", { class: "hint", text: isLightTab ? "Đang dùng (Light):" : "Đang dùng (Dark):" }),
+        el("span", { class: "hint", text: isLightTab ? t("Đang dùng (Light):", "Active (Light):") : t("Đang dùng (Dark):", "Active (Dark):") }),
         el("span", { class: "badge", text: formatAssetLabel(currentVal), style: { maxWidth: "240px" } }),
       ]),
       dropzone,
@@ -1776,31 +1814,31 @@
     ]));
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("div", { class: "sec-title" }, ["Thư viện ảnh nhanh", el("span", { text: `${state.library.length} ảnh` })]),
+      el("div", { class: "sec-title" }, [t("Thư viện ảnh nhanh", "Asset Library"), el("span", { text: t(`${state.library.length} ảnh`, `${state.library.length} items`) })]),
       libGrid,
     ]));
 
     body.appendChild(el("div", { class: "sec" }, [
       el("div", { class: "sec-title" }, [
-        "Canh vị trí & Hiệu ứng",
-        el("span", { class: "hint", text: "Hiệu ứng áp dụng chung Dark & Light" }),
+        t("Canh vị trí & Hiệu ứng", "Position & Effects"),
+        el("span", { class: "hint", text: t("Hiệu ứng áp dụng chung Dark & Light", "Shared across Dark & Light") }),
       ]),
       el("div", { class: "row", style: { alignItems: "flex-start" } }, [
         el("div", { class: "col" }, posColChildren),
         el("div", { class: "col", style: { flex: "1" } }, [
-          el("span", { style: { fontSize: "11px", color: "#CFC8A3" }, text: "Kiểu hiển thị (Fit)" }),
+          el("span", { style: { fontSize: "11px", color: "#CFC8A3" }, text: t("Kiểu hiển thị (Fit)", "Image Fit") }),
           fitSelect,
-          el("span", { style: { fontSize: "11px", color: "#CFC8A3", marginTop: "4px" }, text: "Kiểu lớp phủ tối (Scrim)" }),
+          el("span", { style: { fontSize: "11px", color: "#CFC8A3", marginTop: "4px" }, text: t("Kiểu lớp phủ tối (Scrim)", "Scrim Overlay Style") }),
           scrimSel,
         ]),
       ]),
-      slider("Độ mờ nền (Blur)", fx.blur, 0, 40, 1, "px", (v, done) => { fx.blur = v; commitDraft(done); }),
-      slider("Độ sáng (Brightness)", fx.brightness, 20, 200, 2, "%", (v, done) => { fx.brightness = v; commitDraft(done); }),
-      slider("Độ tương phản (Contrast)", fx.contrast, 30, 200, 2, "%", (v, done) => { fx.contrast = v; commitDraft(done); }),
-      slider("Bão hòa màu (Saturate)", fx.saturate, 0, 250, 5, "%", (v, done) => { fx.saturate = v; commitDraft(done); }),
-      slider("Độ rõ ảnh nền (Opacity)", fx.opacity, 0, 100, 2, "%", (v, done) => { fx.opacity = v; commitDraft(done); }),
-      slider("Phóng to (Scale)", fx.scale, 100, 200, 1, "%", (v, done) => { fx.scale = v; commitDraft(done); }),
-      slider("Độ tối lớp phủ đọc chữ (Scrim)", fx.scrimOpacity, 0, 100, 2, "%", (v, done) => { fx.scrimOpacity = v; commitDraft(done); }),
+      slider(t("Độ mờ nền (Blur)", "Wallpaper Blur"), fx.blur, 0, 40, 1, "px", (v, done) => { fx.blur = v; commitDraft(done); }),
+      slider(t("Độ sáng (Brightness)", "Brightness"), fx.brightness, 20, 200, 2, "%", (v, done) => { fx.brightness = v; commitDraft(done); }),
+      slider(t("Độ tương phản (Contrast)", "Contrast"), fx.contrast, 30, 200, 2, "%", (v, done) => { fx.contrast = v; commitDraft(done); }),
+      slider(t("Bão hòa màu (Saturate)", "Saturation"), fx.saturate, 0, 250, 5, "%", (v, done) => { fx.saturate = v; commitDraft(done); }),
+      slider(t("Độ rõ ảnh nền (Opacity)", "Wallpaper Opacity"), fx.opacity, 0, 100, 2, "%", (v, done) => { fx.opacity = v; commitDraft(done); }),
+      slider(t("Phóng to (Scale)", "Zoom Scale"), fx.scale, 100, 200, 1, "%", (v, done) => { fx.scale = v; commitDraft(done); }),
+      slider(t("Độ tối lớp phủ đọc chữ (Scrim)", "Readability Scrim Opacity"), fx.scrimOpacity, 0, 100, 2, "%", (v, done) => { fx.scrimOpacity = v; commitDraft(done); }),
     ]));
   }
 
@@ -1812,7 +1850,7 @@
       el("button", {
         type: "button",
         class: "btn sm" + (isPresetActive(qp) ? " active" : ""),
-        text: qp.name,
+        text: t(qp.nameVi, qp.nameEn),
         onClick: () => {
           d.surfaces = { ...d.surfaces, ...qp.surfaces };
           commitDraft(true);
@@ -1822,35 +1860,35 @@
     ));
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("div", { class: "sec-title", text: "Kiểu bề mặt nhanh" }),
+      el("div", { class: "sec-title", text: t("Kiểu bề mặt nhanh", "Quick Surface Presets") }),
       quickRow,
     ]));
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("div", { class: "sec-title", text: "Hiệu ứng Kính mờ (Glassmorphism)" }),
-      slider("Độ mờ kính nền (Glass Blur)", sf.glassBlur, 0, 32, 1, "px", (v, done) => { sf.glassBlur = v; commitDraft(done); }),
-      slider("Độ rực màu kính (Saturate)", sf.glassSaturate, 80, 220, 5, "%", (v, done) => { sf.glassSaturate = v; commitDraft(done); }),
+      el("div", { class: "sec-title", text: t("Hiệu ứng Kính mờ (Glassmorphism)", "Glassmorphism Backdrop") }),
+      slider(t("Độ mờ kính nền (Glass Blur)", "Backdrop Blur"), sf.glassBlur, 0, 32, 1, "px", (v, done) => { sf.glassBlur = v; commitDraft(done); }),
+      slider(t("Độ rực màu kính (Saturate)", "Backdrop Saturate"), sf.glassSaturate, 80, 220, 5, "%", (v, done) => { sf.glassSaturate = v; commitDraft(done); }),
     ]));
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("div", { class: "sec-title", text: "Độ mờ đục từng khu vực (Opacity)" }),
-      slider("Sidebar trái", sf.sidebarOpacity, 0, 100, 2, "%", (v, done) => { sf.sidebarOpacity = v; commitDraft(done); }),
-      slider("Khung nền chính & Side Panel", sf.panelOpacity, 0, 100, 2, "%", (v, done) => { sf.panelOpacity = v; commitDraft(done); }),
-      slider("Khung tin nhắn AI", sf.chatOpacity, 0, 100, 2, "%", (v, done) => { sf.chatOpacity = v; commitDraft(done); }),
-      slider("Bong bóng tin nhắn User", sf.userBubbleOpacity, 0, 100, 2, "%", (v, done) => { sf.userBubbleOpacity = v; commitDraft(done); }),
-      slider("Khung nhập Chat (Composer)", sf.composerOpacity, 0, 100, 2, "%", (v, done) => { sf.composerOpacity = v; commitDraft(done); }),
-      slider("Khối Code Block", sf.codeOpacity, 0, 100, 2, "%", (v, done) => { sf.codeOpacity = v; commitDraft(done); }),
-      slider("Trình sửa Code (Monaco) & Terminal", sf.editorOpacity, 0, 100, 2, "%", (v, done) => { sf.editorOpacity = v; commitDraft(done); }),
-      slider("Thanh tiêu đề (Titlebar)", sf.titlebarOpacity, 0, 100, 2, "%", (v, done) => { sf.titlebarOpacity = v; commitDraft(done); }),
-      slider("Popup / Menu / Dialog", sf.overlayOpacity, 45, 100, 1, "%", (v, done) => { sf.overlayOpacity = v; commitDraft(done); }),
+      el("div", { class: "sec-title", text: t("Độ mờ đục từng khu vực (Opacity)", "Per-Region Opacity") }),
+      slider(t("Sidebar trái", "Left Sidebar"), sf.sidebarOpacity, 0, 100, 2, "%", (v, done) => { sf.sidebarOpacity = v; commitDraft(done); }),
+      slider(t("Khung nền chính & Side Panel", "Main Canvas & Side Panel"), sf.panelOpacity, 0, 100, 2, "%", (v, done) => { sf.panelOpacity = v; commitDraft(done); }),
+      slider(t("Khung tin nhắn AI", "Agent Response Cards"), sf.chatOpacity, 0, 100, 2, "%", (v, done) => { sf.chatOpacity = v; commitDraft(done); }),
+      slider(t("Bong bóng tin nhắn User", "User Message Bubble"), sf.userBubbleOpacity, 0, 100, 2, "%", (v, done) => { sf.userBubbleOpacity = v; commitDraft(done); }),
+      slider(t("Khung nhập Chat (Composer)", "Chat Composer"), sf.composerOpacity, 0, 100, 2, "%", (v, done) => { sf.composerOpacity = v; commitDraft(done); }),
+      slider(t("Khối Code Block", "Code Blocks"), sf.codeOpacity, 0, 100, 2, "%", (v, done) => { sf.codeOpacity = v; commitDraft(done); }),
+      slider(t("Trình sửa Code (Monaco) & Terminal", "Monaco Editor & Terminal"), sf.editorOpacity, 0, 100, 2, "%", (v, done) => { sf.editorOpacity = v; commitDraft(done); }),
+      slider(t("Thanh tiêu đề (Titlebar)", "Titlebar"), sf.titlebarOpacity, 0, 100, 2, "%", (v, done) => { sf.titlebarOpacity = v; commitDraft(done); }),
+      slider(t("Popup / Menu / Dialog", "Popups / Menus / Dialogs"), sf.overlayOpacity, 45, 100, 1, "%", (v, done) => { sf.overlayOpacity = v; commitDraft(done); }),
     ]));
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("div", { class: "sec-title", text: "Bo góc (Border Radius)" }),
-      slider("Bo góc Panel lớn", sf.panelRadius, 0, 32, 1, "px", (v, done) => { sf.panelRadius = v; commitDraft(done); }),
-      slider("Bo góc Card & Tin nhắn AI", sf.cardRadius, 0, 32, 1, "px", (v, done) => { sf.cardRadius = v; commitDraft(done); }),
-      slider("Bo góc Khung nhập Composer", sf.composerRadius, 0, 32, 1, "px", (v, done) => { sf.composerRadius = v; commitDraft(done); }),
-      slider("Bo góc Bong bóng User", sf.bubbleRadius, 0, 32, 1, "px", (v, done) => { sf.bubbleRadius = v; commitDraft(done); }),
+      el("div", { class: "sec-title", text: t("Bo góc (Border Radius)", "Corner Radius") }),
+      slider(t("Bo góc Panel lớn", "Main Panel Radius"), sf.panelRadius, 0, 32, 1, "px", (v, done) => { sf.panelRadius = v; commitDraft(done); }),
+      slider(t("Bo góc Card & Tin nhắn AI", "Card & AI Message Radius"), sf.cardRadius, 0, 32, 1, "px", (v, done) => { sf.cardRadius = v; commitDraft(done); }),
+      slider(t("Bo góc Khung nhập Composer", "Composer Radius"), sf.composerRadius, 0, 32, 1, "px", (v, done) => { sf.composerRadius = v; commitDraft(done); }),
+      slider(t("Bo góc Bong bóng User", "User Bubble Radius"), sf.bubbleRadius, 0, 32, 1, "px", (v, done) => { sf.bubbleRadius = v; commitDraft(done); }),
     ]));
   }
 
@@ -1862,13 +1900,13 @@
         class: "btn sm" + (d.preset === id ? " active" : ""),
         onClick: async () => {
           try {
-            setStatus(`Đang đổi bảng màu ${p.label}...`, "busy");
+            setStatus(t(`Đang đổi bảng màu ${p.label}...`, `Applying palette ${p.label}...`), "busy");
             const res = await sendCommand("apply-preset-colors", { presetId: id, config: d });
             draftRevision++;
             applyReceivedState(res, { force: true });
-            setStatus(`Đã đổi bảng màu ${p.label}`, "ok");
+            setStatus(t(`Đã đổi bảng màu ${p.label}`, `Applied palette ${p.label}`), "ok");
           } catch (e) {
-            setStatus("Lỗi đổi preset: " + e.message, "err");
+            setStatus(t("Lỗi đổi preset: ", "Preset error: ") + e.message, "err");
           }
         },
       }, [
@@ -1880,22 +1918,22 @@
     // 2. Color pickers (Dark vs Light)
     const isLightC = state.colorModeTab === "light";
     const cSeg = el("div", { class: "seg" }, [
-      el("button", { type: "button", class: !isLightC ? "active" : "", text: "🌙 Bảng màu Dark", onClick: () => { state.colorModeTab = "dark"; renderBody(); } }),
-      el("button", { type: "button", class: isLightC ? "active" : "", text: "☀️ Bảng màu Light", onClick: () => { state.colorModeTab = "light"; renderBody(); } }),
+      el("button", { type: "button", class: !isLightC ? "active" : "", text: t("🌙 Bảng màu Dark", "🌙 Dark Palette"), onClick: () => { state.colorModeTab = "dark"; renderBody(); } }),
+      el("button", { type: "button", class: isLightC ? "active" : "", text: t("☀️ Bảng màu Light", "☀️ Light Palette"), onClick: () => { state.colorModeTab = "light"; renderBody(); } }),
     ]);
 
     const colorKeys = isLightC
       ? [
-          ["chromeBg", "Nền Chrome"], ["chromeFg", "Chữ Chrome"], ["primary", "Nhấn chính"], ["text", "Chữ chính"],
-          ["textMuted", "Chữ phụ"], ["surfaceBase", "Nền Card"], ["sidebarBase", "Nền Sidebar"], ["overlayBase", "Nền Popup"],
-          ["scrimBase", "Màu phủ Scrim"], ["paper0", "Paper 0"], ["paper1", "Paper 1"], ["paper2", "Paper 2"], ["paper3", "Paper 3"],
+          ["chromeBg", t("Nền Chrome", "Chrome Bg")], ["chromeFg", t("Chữ Chrome", "Chrome Text")], ["primary", t("Nhấn chính", "Primary")], ["text", t("Chữ chính", "Text")],
+          ["textMuted", t("Chữ phụ", "Muted Text")], ["surfaceBase", t("Nền Card", "Surface")], ["sidebarBase", t("Nền Sidebar", "Sidebar")], ["overlayBase", t("Nền Popup", "Overlay")],
+          ["scrimBase", t("Màu phủ Scrim", "Scrim")], ["paper0", "Paper 0"], ["paper1", "Paper 1"], ["paper2", "Paper 2"], ["paper3", "Paper 3"],
         ]
       : [
-          ["chromeBg", "Nền Chrome"], ["chromeFg", "Chữ Chrome"], ["primary", "Nhấn chính"], ["accentBlue", "Xanh Blue"],
-          ["accentAqua", "Ngọc Aqua"], ["accentGreen", "Xanh lá"], ["accentPink", "Hồng Pink"], ["accentViolet", "Tím Violet"],
-          ["accentOrange", "Cam Orange"], ["text", "Chữ chính"], ["textMuted", "Chữ phụ"], ["textSubtle", "Chữ mờ"],
-          ["surfaceBase", "Nền Card"], ["sidebarBase", "Nền Sidebar"], ["overlayBase", "Nền Popup"], ["scrimBase", "Màu phủ Scrim"],
-          ["selection", "Vùng chọn"],
+          ["chromeBg", t("Nền Chrome", "Chrome Bg")], ["chromeFg", t("Chữ Chrome", "Chrome Text")], ["primary", t("Nhấn chính", "Primary")], ["accentBlue", t("Xanh Blue", "Blue")],
+          ["accentAqua", t("Ngọc Aqua", "Aqua")], ["accentGreen", t("Xanh lá", "Green")], ["accentPink", t("Hồng Pink", "Pink")], ["accentViolet", t("Tím Violet", "Violet")],
+          ["accentOrange", t("Cam Orange", "Orange")], ["text", t("Chữ chính", "Text")], ["textMuted", t("Chữ phụ", "Muted Text")], ["textSubtle", t("Chữ mờ", "Subtle Text")],
+          ["surfaceBase", t("Nền Card", "Surface")], ["sidebarBase", t("Nền Sidebar", "Sidebar")], ["overlayBase", t("Nền Popup", "Overlay")], ["scrimBase", t("Màu phủ Scrim", "Scrim")],
+          ["selection", t("Vùng chọn", "Selection")],
         ];
 
     const palGrid = el("div", { class: "grid2" }, colorKeys.map(([key, label]) =>
@@ -1908,15 +1946,15 @@
     // 3. Composer & User Bubble Gradients (Dark Mode)
     const comp = d.composer;
     const compGrid = el("div", { class: "grid2" }, [
-      colorPicker("Viền Composer 1", comp.rimStart, (v, done) => { comp.rimStart = v; commitDraft(done); }),
-      colorPicker("Viền Composer 2", comp.rimMid, (v, done) => { comp.rimMid = v; commitDraft(done); }),
-      colorPicker("Viền Composer 3", comp.rimEnd, (v, done) => { comp.rimEnd = v; commitDraft(done); }),
-      colorPicker("Nền Composer 1", comp.innerStart, (v, done) => { comp.innerStart = v; commitDraft(done); }),
-      colorPicker("Nền Composer 2", comp.innerMid, (v, done) => { comp.innerMid = v; commitDraft(done); }),
-      colorPicker("Nền Composer 3", comp.innerEnd, (v, done) => { comp.innerEnd = v; commitDraft(done); }),
-      colorPicker("Bong bóng User 1", comp.userBubbleStart, (v, done) => { comp.userBubbleStart = v; commitDraft(done); }),
-      colorPicker("Bong bóng User 2", comp.userBubbleEnd, (v, done) => { comp.userBubbleEnd = v; commitDraft(done); }),
-      colorPicker("Viền Bong bóng", comp.userBubbleBorder, (v, done) => { comp.userBubbleBorder = v; commitDraft(done); }),
+      colorPicker(t("Viền Composer 1", "Composer Rim 1"), comp.rimStart, (v, done) => { comp.rimStart = v; commitDraft(done); }),
+      colorPicker(t("Viền Composer 2", "Composer Rim 2"), comp.rimMid, (v, done) => { comp.rimMid = v; commitDraft(done); }),
+      colorPicker(t("Viền Composer 3", "Composer Rim 3"), comp.rimEnd, (v, done) => { comp.rimEnd = v; commitDraft(done); }),
+      colorPicker(t("Nền Composer 1", "Composer Bg 1"), comp.innerStart, (v, done) => { comp.innerStart = v; commitDraft(done); }),
+      colorPicker(t("Nền Composer 2", "Composer Bg 2"), comp.innerMid, (v, done) => { comp.innerMid = v; commitDraft(done); }),
+      colorPicker(t("Nền Composer 3", "Composer Bg 3"), comp.innerEnd, (v, done) => { comp.innerEnd = v; commitDraft(done); }),
+      colorPicker(t("Bong bóng User 1", "User Bubble 1"), comp.userBubbleStart, (v, done) => { comp.userBubbleStart = v; commitDraft(done); }),
+      colorPicker(t("Bong bóng User 2", "User Bubble 2"), comp.userBubbleEnd, (v, done) => { comp.userBubbleEnd = v; commitDraft(done); }),
+      colorPicker(t("Viền Bong bóng", "Bubble Border"), comp.userBubbleBorder, (v, done) => { comp.userBubbleBorder = v; commitDraft(done); }),
     ]);
 
     // 4. Avatars
@@ -1947,14 +1985,14 @@
         onChange: (e) => {
           if (e.target.checked && userIsNone) {
             e.target.checked = false;
-            setStatus("Chưa có ảnh Avatar User — hãy bấm 'Đổi Avatar User'", "err");
+            setStatus(t("Chưa có ảnh Avatar User — hãy bấm 'Đổi Avatar User'", "No User Avatar image — click 'Change User Avatar'"), "err");
             return;
           }
           av.userVisible = e.target.checked;
           commitDraft(true);
         },
       }),
-      "Hiện Avatar User",
+      t("Hiện Avatar User", "Show User Avatar"),
     ]);
     const agentAvToggle = el("label", { class: "toggle" }, [
       el("input", {
@@ -1973,7 +2011,7 @@
           commitDraft(true);
         },
       }),
-      "Hiện Avatar Agent",
+      t("Hiện Avatar Agent", "Show Agent Avatar"),
     ]);
 
     const userAvThumbBox = makeAvPreview(userAvSpec, false);
@@ -1985,31 +2023,31 @@
     };
 
     const avChildren = [
-      el("div", { class: "sec-title", text: "Tùy chỉnh Avatar User & Agent" }),
+      el("div", { class: "sec-title", text: t("Tùy chỉnh Avatar User & Agent", "User & Agent Avatars") }),
       el("div", { class: "grid2" }, [
         el("div", { class: "av-card" }, [
           userAvThumbBox,
           el("div", { class: "av-meta" }, [
-            el("span", { class: "av-label", text: "Avatar User" }),
+            el("span", { class: "av-label", text: t("Avatar User", "User Avatar") }),
             el("span", { class: "av-val", text: formatAssetLabel(userAvSpec), title: userAvSpec }),
           ]),
         ]),
         el("div", { class: "av-card" }, [
           agentAvThumbBox,
           el("div", { class: "av-meta" }, [
-            el("span", { class: "av-label", text: "Avatar Agent" }),
+            el("span", { class: "av-label", text: t("Avatar Agent", "Agent Avatar") }),
             el("span", { class: "av-val", text: formatAssetLabel(agentAvSpec), title: agentAvSpec }),
           ]),
         ]),
       ]),
       el("div", { class: "row" }, [userAvToggle, agentAvToggle]),
       el("div", { class: "grid2" }, [
-        el("button", { type: "button", class: "btn accent sm", text: "🖼️ Đổi Avatar User", onClick: () => pickNativeImage("userAvatar") }),
-        el("button", { type: "button", class: "btn accent sm", text: "🖼️ Đổi Avatar Agent", onClick: () => pickNativeImage("agentAvatar") }),
+        el("button", { type: "button", class: "btn accent sm", text: t("🖼️ Đổi Avatar User", "🖼️ Change User Avatar"), onClick: () => pickNativeImage("userAvatar") }),
+        el("button", { type: "button", class: "btn accent sm", text: t("🖼️ Đổi Avatar Agent", "🖼️ Change Agent Avatar"), onClick: () => pickNativeImage("agentAvatar") }),
       ]),
       el("div", { class: "grid2" }, [
         el("button", {
-          type: "button", class: "btn sm" + (userIsNone ? " active" : ""), text: "🚫 Tắt ảnh User",
+          type: "button", class: "btn sm" + (userIsNone ? " active" : ""), text: t("🚫 Tắt ảnh User", "🚫 Hide User Avatar"),
           onClick: () => {
             d.userAvatar = "NONE";
             av.userVisible = false;
@@ -2018,7 +2056,7 @@
           },
         }),
         el("button", {
-          type: "button", class: "btn sm" + (agentIsNone ? " active" : ""), text: "🚫 Tắt ảnh Agent",
+          type: "button", class: "btn sm" + (agentIsNone ? " active" : ""), text: t("🚫 Tắt ảnh Agent", "🚫 Hide Agent Avatar"),
           onClick: () => {
             d.agentAvatar = d.agentAvatar || {};
             d.agentAvatar.image = "NONE";
@@ -2030,7 +2068,7 @@
       ]),
       el("div", { class: "grid2" }, [
         el("button", {
-          type: "button", class: "btn sm" + (agentAvSpec === "SVG_STAR" ? " active" : ""), text: "✦ Agent: Sao 4 cánh SVG",
+          type: "button", class: "btn sm" + (agentAvSpec === "SVG_STAR" ? " active" : ""), text: t("✦ Agent: Sao 4 cánh SVG", "✦ Agent: 4-Point Star SVG"),
           onClick: () => {
             d.agentAvatar = d.agentAvatar || {};
             d.agentAvatar.image = "SVG_STAR";
@@ -2040,7 +2078,7 @@
           },
         }),
         el("button", {
-          type: "button", class: "btn sm", text: "📐 Xoay 0° (Thẳng cả 2)",
+          type: "button", class: "btn sm", text: t("📐 Xoay 0° (Thẳng cả 2)", "📐 Reset 0° Rotation"),
           onClick: () => { av.userRotate = 0; av.agentRotate = 0; commitDraft(true); renderBody(); },
         }),
       ]),
@@ -2052,29 +2090,29 @@
       d.agentAvatar.iconStops = Array.isArray(d.agentAvatar.iconStops) && d.agentAvatar.iconStops.length >= 3
         ? d.agentAvatar.iconStops : ["#1F6E97", "#285C84", "#0E3252"];
       avChildren.push(
-        el("div", { class: "hint", text: "Màu Sao 4 cánh SVG (hiển thị live ngay khi kéo):" }),
+        el("div", { class: "hint", text: t("Màu Sao 4 cánh SVG (hiển thị live ngay khi kéo):", "4-Point Star SVG Colors (live preview):") }),
         el("div", { class: "grid2" }, [
-          colorPicker("Nền Sao 1", d.agentAvatar.bgStops[0], (v, done) => { d.agentAvatar.bgStops[0] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
-          colorPicker("Nền Sao 2", d.agentAvatar.bgStops[1], (v, done) => { d.agentAvatar.bgStops[1] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
-          colorPicker("Nền Sao 3", d.agentAvatar.bgStops[2], (v, done) => { d.agentAvatar.bgStops[2] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
-          colorPicker("Sao 1", d.agentAvatar.iconStops[0], (v, done) => { d.agentAvatar.iconStops[0] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
-          colorPicker("Sao 2", d.agentAvatar.iconStops[1], (v, done) => { d.agentAvatar.iconStops[1] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
-          colorPicker("Sao 3", d.agentAvatar.iconStops[2], (v, done) => { d.agentAvatar.iconStops[2] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
+          colorPicker(t("Nền Sao 1", "Star Bg 1"), d.agentAvatar.bgStops[0], (v, done) => { d.agentAvatar.bgStops[0] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
+          colorPicker(t("Nền Sao 2", "Star Bg 2"), d.agentAvatar.bgStops[1], (v, done) => { d.agentAvatar.bgStops[1] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
+          colorPicker(t("Nền Sao 3", "Star Bg 3"), d.agentAvatar.bgStops[2], (v, done) => { d.agentAvatar.bgStops[2] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
+          colorPicker(t("Sao 1", "Star Icon 1"), d.agentAvatar.iconStops[0], (v, done) => { d.agentAvatar.iconStops[0] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
+          colorPicker(t("Sao 2", "Star Icon 2"), d.agentAvatar.iconStops[1], (v, done) => { d.agentAvatar.iconStops[1] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
+          colorPicker(t("Sao 3", "Star Icon 3"), d.agentAvatar.iconStops[2], (v, done) => { d.agentAvatar.iconStops[2] = v; refreshAgentStarThumb(); commitDraft({ isCommit: done, forceDisk: done && state.autoSave }); }),
         ])
       );
     }
 
     avChildren.push(
-      slider("Kích thước Avatar User", av.userSize, 18, 64, 1, "px", (v, done) => { av.userSize = v; commitDraft(done); }),
-      slider("Bo góc Avatar User (50% = Tròn)", av.userRadius, 0, 50, 1, "%", (v, done) => { av.userRadius = v; commitDraft(done); }),
-      slider("Góc nghiêng Avatar User", av.userRotate, -45, 45, 1, "°", (v, done) => { av.userRotate = v; commitDraft(done); }),
-      slider("Kích thước Avatar Agent", av.agentSize, 18, 64, 1, "px", (v, done) => { av.agentSize = v; commitDraft(done); }),
-      slider("Bo góc Avatar Agent (50% = Tròn)", av.agentRadius, 0, 50, 1, "%", (v, done) => { av.agentRadius = v; commitDraft(done); }),
-      slider("Góc nghiêng Avatar Agent", av.agentRotate, -45, 45, 1, "°", (v, done) => { av.agentRotate = v; commitDraft(done); })
+      slider(t("Kích thước Avatar User", "User Avatar Size"), av.userSize, 18, 64, 1, "px", (v, done) => { av.userSize = v; commitDraft(done); }),
+      slider(t("Bo góc Avatar User (50% = Tròn)", "User Avatar Radius (50% = Circle)"), av.userRadius, 0, 50, 1, "%", (v, done) => { av.userRadius = v; commitDraft(done); }),
+      slider(t("Góc nghiêng Avatar User", "User Avatar Tilt"), av.userRotate, -45, 45, 1, "°", (v, done) => { av.userRotate = v; commitDraft(done); }),
+      slider(t("Kích thước Avatar Agent", "Agent Avatar Size"), av.agentSize, 18, 64, 1, "px", (v, done) => { av.agentSize = v; commitDraft(done); }),
+      slider(t("Bo góc Avatar Agent (50% = Tròn)", "Agent Avatar Radius (50% = Circle)"), av.agentRadius, 0, 50, 1, "%", (v, done) => { av.agentRadius = v; commitDraft(done); }),
+      slider(t("Góc nghiêng Avatar Agent", "Agent Avatar Tilt"), av.agentRotate, -45, 45, 1, "°", (v, done) => { av.agentRotate = v; commitDraft(done); })
     );
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("div", { class: "sec-title", text: "Bảng màu nhanh (Giữ nguyên hình nền)" }),
+      el("div", { class: "sec-title", text: t("Bảng màu nhanh (Giữ nguyên hình nền)", "Quick Palette Presets (Keep Wallpaper)") }),
       presetRow,
     ]));
 
@@ -2085,8 +2123,8 @@
 
     body.appendChild(el("div", { class: "sec" }, [
       el("div", { class: "sec-title" }, [
-        "Gradient Khung nhập & Bong bóng User",
-        el("span", { class: "hint", text: "Áp dụng Dark Mode" }),
+        t("Gradient Khung nhập & Bong bóng User", "Composer & User Bubble Gradients"),
+        el("span", { class: "hint", text: t("Áp dụng Dark Mode", "Dark Mode") }),
       ]),
       compGrid,
     ]));
@@ -2102,7 +2140,7 @@
     const uiFontInp = el("input", {
       type: "text",
       value: typo.uiFont || "",
-      placeholder: "Hoặc nhập tên font cài trên máy...",
+      placeholder: t("Hoặc nhập tên font cài trên máy...", "Or enter installed font name..."),
       onInput: (e) => {
         typo.uiFont = e.target.value;
         uiFontSel.value = UI_FONTS.includes(typo.uiFont) ? typo.uiFont : "";
@@ -2116,13 +2154,13 @@
         uiFontInp.value = e.target.value;
         commitDraft(true);
       },
-    }, UI_FONTS.map((f) => el("option", { value: f, text: f || "Mặc định / Tùy chỉnh" })));
+    }, UI_FONTS.map((f) => el("option", { value: f, text: f || t("Mặc định / Tùy chỉnh", "Default / Custom") })));
     uiFontSel.value = UI_FONTS.includes(typo.uiFont) ? typo.uiFont : "";
 
     const monoFontInp = el("input", {
       type: "text",
       value: typo.monoFont || "",
-      placeholder: "Hoặc nhập tên mono font...",
+      placeholder: t("Hoặc nhập tên mono font...", "Or enter mono font name..."),
       onInput: (e) => {
         typo.monoFont = e.target.value;
         monoFontSel.value = MONO_FONTS.includes(typo.monoFont) ? typo.monoFont : "";
@@ -2136,51 +2174,51 @@
         monoFontInp.value = e.target.value;
         commitDraft(true);
       },
-    }, MONO_FONTS.map((f) => el("option", { value: f, text: f || "Mặc định / Tùy chỉnh" })));
+    }, MONO_FONTS.map((f) => el("option", { value: f, text: f || t("Mặc định / Tùy chỉnh", "Default / Custom") })));
     monoFontSel.value = MONO_FONTS.includes(typo.monoFont) ? typo.monoFont : "";
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("div", { class: "sec-title", text: "Kiểu chữ & Cỡ chữ (Typography)" }),
+      el("div", { class: "sec-title", text: t("Kiểu chữ & Cỡ chữ (Typography)", "Typography & Sizing") }),
       el("div", { class: "grid2" }, [
-        el("div", { class: "col" }, [el("span", { style: { fontSize: "11px", color: "#CFC8A3" }, text: "Font giao diện" }), uiFontSel, uiFontInp]),
-        el("div", { class: "col" }, [el("span", { style: { fontSize: "11px", color: "#CFC8A3" }, text: "Font Code" }), monoFontSel, monoFontInp]),
+        el("div", { class: "col" }, [el("span", { style: { fontSize: "11px", color: "#CFC8A3" }, text: t("Font giao diện", "UI Font") }), uiFontSel, uiFontInp]),
+        el("div", { class: "col" }, [el("span", { style: { fontSize: "11px", color: "#CFC8A3" }, text: t("Font Code", "Code Font") }), monoFontSel, monoFontInp]),
       ]),
-      slider("Cỡ chữ Chat (0 = Mặc định)", typo.chatFontSize, 0, 26, 1, "px", (v, done) => { typo.chatFontSize = v; commitDraft(done); }),
-      slider("Cỡ chữ Code (0 = Mặc định)", typo.codeFontSize, 0, 24, 1, "px", (v, done) => { typo.codeFontSize = v; commitDraft(done); }),
-      slider("Giãn dòng Chat (Line Height)", typo.lineHeight, 1.15, 2.2, 0.02, "", (v, done) => { typo.lineHeight = v; commitDraft(done); }),
+      slider(t("Cỡ chữ Chat (0 = Mặc định)", "Chat Font Size (0 = Default)"), typo.chatFontSize, 0, 26, 1, "px", (v, done) => { typo.chatFontSize = v; commitDraft(done); }),
+      slider(t("Cỡ chữ Code (0 = Mặc định)", "Code Font Size (0 = Default)"), typo.codeFontSize, 0, 24, 1, "px", (v, done) => { typo.codeFontSize = v; commitDraft(done); }),
+      slider(t("Giãn dòng Chat (Line Height)", "Chat Line Height"), typo.lineHeight, 1.15, 2.2, 0.02, "", (v, done) => { typo.lineHeight = v; commitDraft(done); }),
     ]));
 
     // Loading Screen
     const ldStyleSel = el("select", { onChange: (e) => { ld.style = e.target.value; commitDraft(true); } }, [
-      el("option", { value: "kanagawa-wave", text: "Kanagawa Wave (Biểu tượng sóng)" }),
-      el("option", { value: "minimal", text: "Tối giản (Minimal Ring)" }),
-      el("option", { value: "terminal", text: "Terminal (Dấu nhắc >_)" }),
+      el("option", { value: "kanagawa-wave", text: t("Kanagawa Wave (Biểu tượng sóng)", "Kanagawa Wave (Wave Emblem)") }),
+      el("option", { value: "minimal", text: t("Tối giản (Minimal Ring)", "Minimal Ring") }),
+      el("option", { value: "terminal", text: t("Terminal (Dấu nhắc >_)", "Terminal (Prompt >_)") }),
     ]);
     ldStyleSel.value = ld.style || "kanagawa-wave";
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("div", { class: "sec-title", text: "Màn hình khởi động (Loading Screen)" }),
+      el("div", { class: "sec-title", text: t("Màn hình khởi động (Loading Screen)", "Startup Loading Screen") }),
       el("div", { class: "grid2" }, [
         el("input", {
-          type: "text", value: ld.title || "", placeholder: "Tiêu đề...",
+          type: "text", value: ld.title || "", placeholder: t("Tiêu đề...", "Title..."),
           onInput: (e) => { ld.title = e.target.value; commitDraft(false); },
           onChange: (e) => { ld.title = e.target.value; commitDraft(true); },
         }),
         ldStyleSel,
       ]),
       el("input", {
-        type: "text", value: ld.subtitle || "", placeholder: "Dòng chữ phụ...",
+        type: "text", value: ld.subtitle || "", placeholder: t("Dòng chữ phụ...", "Subtitle..."),
         onInput: (e) => { ld.subtitle = e.target.value; commitDraft(false); },
         onChange: (e) => { ld.subtitle = e.target.value; commitDraft(true); },
       }),
       el("div", { class: "row" }, [
         el("label", { class: "toggle" }, [
           el("input", { type: "checkbox", ...(ld.showEmblem !== false ? { checked: "checked" } : {}), onChange: (e) => { ld.showEmblem = e.target.checked; commitDraft(true); } }),
-          "Hiện biểu tượng",
+          t("Hiện biểu tượng", "Show Emblem"),
         ]),
         el("label", { class: "toggle" }, [
           el("input", { type: "checkbox", ...(ld.showProgress !== false ? { checked: "checked" } : {}), onChange: (e) => { ld.showProgress = e.target.checked; commitDraft(true); } }),
-          "Hiện thanh tiến trình",
+          t("Hiện thanh tiến trình", "Show Progress Bar"),
         ]),
       ]),
     ]));
@@ -2190,13 +2228,13 @@
     const updateCssHint = () => {
       const b = countCssBraces(state.customCss || "");
       if (b.open !== b.close) {
-        cssStatusHint.textContent = `⚠️ Lệch ngoặc { ${b.open} / } ${b.close}`;
+        cssStatusHint.textContent = t(`⚠️ Lệch ngoặc { ${b.open} / } ${b.close}`, `⚠️ Unbalanced { ${b.open} / } ${b.close}`);
         cssStatusHint.style.color = "#E46876";
       } else if (state.customCssDirty) {
-        cssStatusHint.textContent = "Chưa áp dụng • Ctrl+S để lưu";
+        cssStatusHint.textContent = t("Chưa áp dụng • Ctrl+S để lưu", "Unsaved • Ctrl+S to apply");
         cssStatusHint.style.color = "#E6C384";
       } else {
-        cssStatusHint.textContent = "Đã đồng bộ • Tab thụt lề";
+        cssStatusHint.textContent = t("Đã đồng bộ • Tab thụt lề", "Synced • Tab indents");
         cssStatusHint.style.color = "#98BB6C";
       }
     };
@@ -2204,7 +2242,7 @@
 
     const cssArea = el("textarea", {
       class: "code",
-      placeholder: "/* Nhập CSS tùy biến riêng tại đây... */",
+      placeholder: t("/* Nhập CSS tùy biến riêng tại đây... */", "/* Enter custom CSS overrides here... */"),
       onInput: (e) => {
         state.customCss = e.target.value;
         state.customCssDirty = state.customCss !== state.savedCustomCss;
@@ -2233,7 +2271,7 @@
       el("div", { class: "sec-title" }, ["Custom CSS (custom.css)", cssStatusHint]),
       cssArea,
       el("button", {
-        type: "button", class: "btn accent", text: "✨ Áp dụng Custom CSS ngay",
+        type: "button", class: "btn accent", text: t("✨ Áp dụng Custom CSS ngay", "✨ Apply Custom CSS Now"),
         onClick: async () => {
           await saveCustomCssNow(false);
           updateCssHint();
@@ -2242,6 +2280,19 @@
     ]));
 
     // Studio Options & Tools
+    const langSel = el("select", {
+      onChange: (e) => {
+        d.studio = d.studio || {};
+        d.studio.language = e.target.value === "en" ? "en" : "vi";
+        commitDraft({ isCommit: true, forceDisk: true });
+        renderAll();
+      },
+    }, [
+      el("option", { value: "vi", text: "🇻🇳 Tiếng Việt" }),
+      el("option", { value: "en", text: "🇺🇸 English" }),
+    ]);
+    langSel.value = st.language === "en" ? "en" : "vi";
+
     const pillPosSel = el("select", {
       onChange: (e) => {
         d.studio = d.studio || {};
@@ -2250,9 +2301,9 @@
         commitDraft(true);
       },
     }, [
-      el("option", { value: "bottom-right", text: "Góc dưới phải" }),
-      el("option", { value: "bottom-left", text: "Góc dưới trái" }),
-      el("option", { value: "top-right", text: "Góc trên phải" }),
+      el("option", { value: "bottom-right", text: t("Góc dưới phải", "Bottom Right") }),
+      el("option", { value: "bottom-left", text: t("Góc dưới trái", "Bottom Left") }),
+      el("option", { value: "top-right", text: t("Góc trên phải", "Top Right") }),
     ]);
     pillPosSel.value = st.pillPosition || "bottom-right";
 
@@ -2260,31 +2311,31 @@
     const resetBtn = el("button", {
       type: "button",
       class: "btn sm" + (resetConfirming ? " danger" : ""),
-      text: resetConfirming ? "⚠️ Bấm lại để Reset?" : "↺ Reset mặc định",
-      title: "Khôi phục cấu hình mặc định và xóa custom.css",
+      text: resetConfirming ? t("⚠️ Bấm lại để Reset?", "⚠️ Click again to Reset?") : t("↺ Reset mặc định", "↺ Reset Default"),
+      title: t("Khôi phục cấu hình mặc định và xóa custom.css", "Restore defaults and clear custom.css"),
       onClick: async () => {
         if (Date.now() > state.confirmResetUntil) {
           state.confirmResetUntil = Date.now() + 4000;
           renderBody();
-          setStatus("Bấm lại lần nữa để xác nhận Reset mặc định (sẽ xóa custom.css)", "busy");
+          setStatus(t("Bấm lại lần nữa để xác nhận Reset mặc định (sẽ xóa custom.css)", "Click again to confirm Reset (clears custom.css)"), "busy");
           return;
         }
         state.confirmResetUntil = 0;
         try {
-          setStatus("Đang khôi phục mặc định...", "busy");
+          setStatus(t("Đang khôi phục mặc định...", "Resetting to defaults..."), "busy");
           const data = await sendCommand("reset-default");
           draftRevision++;
           state.customCssDirty = false;
           applyReceivedState(data, { force: true });
-          setStatus("Đã khôi phục mặc định!", "ok");
+          setStatus(t("Đã khôi phục mặc định!", "Restored default settings!"), "ok");
         } catch (e) {
-          setStatus("Lỗi reset: " + e.message, "err");
+          setStatus(t("Lỗi reset: ", "Reset error: ") + e.message, "err");
         }
       },
     });
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("div", { class: "sec-title", text: "Cài đặt Studio & Tiện ích" }),
+      el("div", { class: "sec-title", text: t("Cài đặt Studio & Tiện ích", "Studio Settings & Tools") }),
       el("div", { class: "row" }, [
         el("label", { class: "toggle" }, [
           el("input", {
@@ -2296,7 +2347,7 @@
               if (state.autoSave && state.dirty) void flushConfigSave();
             },
           }),
-          "Tự động lưu khi kéo",
+          t("Tự động lưu khi kéo", "Auto-save while dragging"),
         ]),
         el("label", { class: "toggle" }, [
           el("input", {
@@ -2309,28 +2360,29 @@
               commitDraft(true);
             },
           }),
-          "Hiện nút nổi (Ctrl+Alt+K)",
+          t("Hiện nút nổi (Ctrl+Alt+K)", "Show floating pill (Ctrl+Alt+K)"),
         ]),
       ]),
-      el("div", { class: "row" }, [el("span", { style: { fontSize: "11px", color: "#CFC8A3" }, text: "Vị trí nút nổi" }), el("div", { style: { width: "160px" } }, [pillPosSel])]),
+      el("div", { class: "row" }, [el("span", { style: { fontSize: "11px", color: "#CFC8A3" }, text: t("Ngôn ngữ (Language)", "Language") }), el("div", { style: { width: "160px" } }, [langSel])]),
+      el("div", { class: "row" }, [el("span", { style: { fontSize: "11px", color: "#CFC8A3" }, text: t("Vị trí nút nổi", "Floating Pill Position") }), el("div", { style: { width: "160px" } }, [pillPosSel])]),
       el("div", { class: "grid3" }, [
         el("button", {
-          type: "button", class: "btn sm", text: "📂 Mở thư mục",
+          type: "button", class: "btn sm", text: t("📂 Mở thư mục", "📂 Open Folder"),
           onClick: async () => {
             try {
               await sendCommand("open-folder");
             } catch (e) {
-              setStatus("Lỗi mở thư mục: " + e.message, "err");
+              setStatus(t("Lỗi mở thư mục: ", "Open folder error: ") + e.message, "err");
             }
           },
         }),
         el("button", {
-          type: "button", class: "btn sm", text: "🔄 Reload app",
+          type: "button", class: "btn sm", text: t("🔄 Reload app", "🔄 Reload App"),
           onClick: async () => {
             try {
               await sendCommand("reload-window");
             } catch (e) {
-              setStatus("Lỗi reload: " + e.message, "err");
+              setStatus(t("Lỗi reload: ", "Reload error: ") + e.message, "err");
             }
           },
         }),
