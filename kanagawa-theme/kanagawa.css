@@ -1372,22 +1372,22 @@ html[data-kn-code-size="1"] body :is(
 }
 
 /* ---- VS Code / Antigravity IDE Workbench Integration ---- */
-html:has(> body.monaco-workbench) {
+html:has(.monaco-workbench) {
   background-color: #0b0f17 !important;
 }
 
-html:has(> body.monaco-workbench.vs:not(.vs-dark)),
-html:has(> body.monaco-workbench.hc-light) {
+html:has(.monaco-workbench.vs:not(.vs-dark)),
+html:has(.monaco-workbench.hc-light) {
   background-color: rgb(var(--kn-l-chrome-rgb)) !important;
 }
 
-html body.monaco-workbench {
+html body:has(> .monaco-workbench) {
   background: transparent !important;
   background-color: transparent !important;
   position: relative;
 }
 
-html body.monaco-workbench::before {
+html body:has(> .monaco-workbench)::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -1397,98 +1397,95 @@ html body.monaco-workbench::before {
   background-image: var(--kn-scrim-image-dark);
 }
 
-html body.monaco-workbench:is(.vs:not(.vs-dark), .hc-light)::before {
+html body:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light))::before {
   background-image: var(--kn-scrim-image-light);
 }
 
-html body.monaco-workbench .monaco-workbench {
+html body .monaco-workbench {
   position: relative;
   z-index: 1 !important;
   background: transparent !important;
   background-color: transparent !important;
 }
 
-html body.monaco-workbench .monaco-workbench .part.titlebar {
+html body .monaco-workbench :is(.monaco-grid-view, .monaco-grid-branch-node, .monaco-split-view2, .split-view-container, .split-view-view, .part.editor) {
+  background-color: transparent !important;
+}
+
+html body .monaco-workbench .part.titlebar {
   background-color: rgba(var(--kn-d-chrome-rgb), var(--kn-titlebar-a)) !important;
   backdrop-filter: var(--kn-backdrop) !important;
   -webkit-backdrop-filter: var(--kn-backdrop) !important;
 }
 
-html body.monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .monaco-workbench .part.titlebar {
+html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.titlebar {
   background-color: rgba(var(--kn-l-chrome-rgb), var(--kn-titlebar-a)) !important;
 }
 
-html body.monaco-workbench .monaco-workbench :is(.part.activitybar, .part.sidebar, .part.statusbar) {
+html body .monaco-workbench :is(.part.activitybar, .part.sidebar, .part.statusbar) {
   background-color: rgba(var(--kn-d-side-rgb), var(--kn-sidebar-a)) !important;
   backdrop-filter: var(--kn-backdrop) !important;
   -webkit-backdrop-filter: var(--kn-backdrop) !important;
 }
 
-html body.monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .monaco-workbench :is(.part.activitybar, .part.sidebar, .part.statusbar) {
+html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) :is(.part.activitybar, .part.sidebar, .part.statusbar) {
   background-color: rgba(var(--kn-l-side-rgb), var(--kn-sidebar-a)) !important;
 }
 
-html body.monaco-workbench .monaco-workbench :is(.part.sidebar, .part.activitybar) .monaco-list,
-html body.monaco-workbench .monaco-workbench :is(.part.sidebar, .part.activitybar) .monaco-list-rows,
-html body.monaco-workbench .monaco-workbench :is(.part.sidebar, .part.activitybar) .pane-body,
-html body.monaco-workbench .monaco-workbench :is(.part.sidebar, .part.activitybar) .composite.title {
+html body .monaco-workbench :is(.part.sidebar, .part.activitybar) :is(.monaco-list, .monaco-list-rows, .pane-body, .composite.title) {
   background-color: transparent !important;
 }
 
-html body.monaco-workbench .monaco-workbench .part.editor > .content,
-html body.monaco-workbench .monaco-workbench .part.editor > .content .editor-group-container > .editor-container,
-html body.monaco-workbench .monaco-workbench .part.editor > .content .editor-group-container > .title,
-html body.monaco-workbench .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container,
-html body.monaco-workbench .monaco-workbench .part.panel > .composite.title,
-html body.monaco-workbench .monaco-workbench .part.panel > .content {
+html body .monaco-workbench .part.editor > .content,
+html body .monaco-workbench .part.editor > .content .editor-group-container > .editor-container,
+html body .monaco-workbench .part.editor > .content .editor-group-container > .title,
+html body .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container,
+html body .monaco-workbench .part.panel > .composite.title,
+html body .monaco-workbench .part.panel > .content {
   background-color: transparent !important;
 }
 
-html body.monaco-workbench .monaco-workbench .part.editor > .content .editor-group-container,
-html body.monaco-workbench .monaco-workbench .part.editor > .content .editor-group-container.empty,
-html body.monaco-workbench .monaco-workbench .part.panel {
+html body .monaco-workbench .part.editor > .content .editor-group-container,
+html body .monaco-workbench .part.editor > .content .editor-group-container.empty,
+html body .monaco-workbench .part.panel {
   background-color: rgba(var(--kn-d-surf-rgb), var(--kn-editor-a)) !important;
   backdrop-filter: var(--kn-backdrop) !important;
   -webkit-backdrop-filter: var(--kn-backdrop) !important;
 }
 
-html body.monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .monaco-workbench .part.editor > .content .editor-group-container,
-html body.monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .monaco-workbench .part.editor > .content .editor-group-container.empty,
-html body.monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .monaco-workbench .part.panel {
+html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.editor > .content .editor-group-container,
+html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.editor > .content .editor-group-container.empty,
+html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.panel {
   background-color: rgba(var(--kn-l-surf-rgb), var(--kn-editor-a)) !important;
 }
 
-html body.monaco-workbench .monaco-workbench .part.auxiliarybar {
+html body .monaco-workbench .part.auxiliarybar {
   background-color: rgba(var(--kn-d-surf-rgb), var(--kn-panel-a)) !important;
   backdrop-filter: var(--kn-backdrop) !important;
   -webkit-backdrop-filter: var(--kn-backdrop) !important;
 }
 
-html body.monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .monaco-workbench .part.auxiliarybar {
+html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.auxiliarybar {
   background-color: rgba(var(--kn-l-surf-rgb), var(--kn-panel-a)) !important;
 }
 
-html body.monaco-workbench .monaco-workbench .part.auxiliarybar > .content,
-html body.monaco-workbench .monaco-workbench .part.auxiliarybar > .composite.title {
+html body .monaco-workbench .part.auxiliarybar > .content,
+html body .monaco-workbench .part.auxiliarybar > .composite.title {
   background-color: transparent !important;
 }
 
-html body.monaco-workbench .monaco-workbench :is(.monaco-editor, .monaco-editor-background, .monaco-editor .margin, .xterm, .xterm-viewport) {
+html body .monaco-workbench :is(.monaco-editor, .monaco-editor-background, .monaco-editor .margin, .xterm, .xterm-viewport) {
   background-color: transparent !important;
 }
 
-html body.monaco-workbench .monaco-workbench .quick-input-widget,
-html body.monaco-workbench .monaco-workbench .monaco-menu-container,
-html body.monaco-workbench .monaco-workbench .context-view .monaco-scrollable-element {
+html body .monaco-workbench :is(.quick-input-widget, .monaco-menu-container, .context-view .monaco-scrollable-element) {
   background-color: rgba(var(--kn-d-over-rgb), var(--kn-overlay-a)) !important;
   backdrop-filter: var(--kn-backdrop) !important;
   -webkit-backdrop-filter: var(--kn-backdrop) !important;
   border-radius: var(--kn-card-radius) !important;
 }
 
-html body.monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .monaco-workbench .quick-input-widget,
-html body.monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .monaco-workbench .monaco-menu-container,
-html body.monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .monaco-workbench .context-view .monaco-scrollable-element {
+html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) :is(.quick-input-widget, .monaco-menu-container, .context-view .monaco-scrollable-element) {
   background-color: rgba(var(--kn-l-over-rgb), var(--kn-overlay-a)) !important;
 }
 
@@ -1614,7 +1611,7 @@ html::before {
   background-repeat: no-repeat;
 }
 
-html:has(> body:is(.theme-light, .vs:not(.vs-dark), .hc-light))::before {
+html:has(> body.theme-light, > body > .monaco-workbench:is(.vs:not(.vs-dark), .hc-light))::before {
   background-position: var(--kn-wp-pos-light, right top) !important;
 }
 

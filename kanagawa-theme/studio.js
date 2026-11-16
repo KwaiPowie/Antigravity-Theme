@@ -231,12 +231,9 @@
 
   function isLightDomMode() {
     const b = document.body;
-    if (!b) return false;
-    return (
-      b.classList.contains("theme-light") ||
-      (b.classList.contains("vs") && !b.classList.contains("vs-dark")) ||
-      b.classList.contains("hc-light")
-    );
+    if (b && b.classList.contains("theme-light")) return true;
+    const wb = document.querySelector(".monaco-workbench");
+    return Boolean(wb && ((wb.classList.contains("vs") && !wb.classList.contains("vs-dark")) || wb.classList.contains("hc-light")));
   }
 
   const initialModeIsLight = isLightDomMode();
