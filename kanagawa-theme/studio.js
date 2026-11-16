@@ -229,6 +229,9 @@
   let pickingImage = false;
   let lastRenderedTab = null;
 
+  let userEditedModeTabs = false;
+  let initialWorkbenchModeSynced = false;
+
   function isLightDomMode() {
     const b = document.body;
     if (b && b.classList.contains("theme-light")) return true;
@@ -268,7 +271,7 @@
         timer = setTimeout(() => {
           if (pending.has(id)) {
             pending.delete(id);
-            reject(new Error("Timeout waiting for main process"));
+            reject(new Error(t("Hết thời gian chờ phản hồi từ ứng dụng", "Timeout waiting for main process")));
           }
         }, timeoutMs);
       }
@@ -289,7 +292,7 @@
       const entry = pending.get(msg.id);
       if (entry.timer) clearTimeout(entry.timer);
       pending.delete(msg.id);
-      if (msg.ok === false) entry.reject(new Error(msg.error || "Unknown error"));
+      if (msg.ok === false) entry.reject(new Error(msg.error || t("Lỗi không xác định", "Unknown error")));
       else entry.resolve(msg.data);
       return;
     }
@@ -337,7 +340,7 @@
         state.dirty = false;
         applyLivePreview(state.draft);
       } else {
-        setStatus("Cấu hình trên đĩa vừa thay đổi (đang giữ bản nháp chưa lưu)", "busy");
+        setStatus(t("Cấu hình trên đĩa vừa thay đổi (đang giữ bản nháp chưa lưu)", "Config on disk changed (keeping unsaved draft)"), "busy");
       }
     }
 
@@ -587,31 +590,30 @@
     }
 
     const liveRules = [];
+    const preBodySel = 'pre :not(:where(button, button *, [role="button"], [role="button"] *, [class*="material-symbols"], [class*="codicon"], [data-icon], div[class*="rounded-xl"] > div:first-child, div[class*="rounded-xl"] > div:first-child *, div[class*="rounded-lg"] > div:first-child, div[class*="rounded-lg"] > div:first-child *))';
+    const codeBodySel = 'code :not(:where([class*="material-symbols"], [class*="codicon"], [data-icon], button, button *, [role="button"], [role="button"] *))';
+    const chatTextSel = 'body :is([data-markdown-root], [data-markdown-root] :is(p, li, ul, ol, blockquote, td, th), [data-testid="user-message-bubble"], [data-testid="user-message-bubble"] *, .agy-user-bubble, .agy-user-bubble *, .leading-relaxed:not(:where([role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="tooltip"] *, [data-mention-menu] *, .surface-composer *, .gettingStartedContainer *, .extension-editor *, .settings-editor *, .monaco-hover *, .notification-list-item *, .antigravity-welcome-container *, [id="kn-studio-host"] *)))';
     if (uiFont) {
       liveRules.push(
         `html, body { --font-sans: ${uiFontStack} !important; font-family: ${uiFontStack} !important; }`,
-        `body :not(:where(pre, pre *, code, code *, kbd, samp, .font-mono, .font-mono *, .monaco-editor, .monaco-editor *, .xterm, .xterm *, [class*="material-symbols"], [class*="codicon"], [data-icon], [id="kn-studio-host"], [id="kn-studio-host"] *)) { font-family: ${uiFontStack} !important; }`
+        `body :not(:where(pre, pre *, code, code *, kbd, samp, .font-mono, .font-mono *, .monaco-editor, .monaco-editor *, .xterm, .xterm *, [class*="material-symbols"], [class*="codicon"], [data-icon], .predefined-file-icon, .element-decoration.bubble, .outline-element-decoration.bubble, [class*="theme-icon"], [id="kn-studio-host"], [id="kn-studio-host"] *)) { font-family: ${uiFontStack} !important; }`
       );
     }
     if (monoFont) {
       liveRules.push(
         `html, body { --font-mono: ${monoFontStack} !important; }`,
-        `body :is(pre, pre *, code, code *, kbd, samp, .font-mono, .font-mono *, .monaco-editor, .monaco-editor .view-lines, .monaco-editor .view-line, .xterm, .xterm-rows) { --font-mono: ${monoFontStack} !important; font-family: ${monoFontStack} !important; }`
+        `body :is(pre, ${preBodySel}, code, ${codeBodySel}, kbd, samp, .font-mono, .font-mono :not(:where([class*="material-symbols"], [class*="codicon"], [data-icon])), .monaco-editor .view-lines, .monaco-editor .view-line, .monaco-editor .view-line *, .xterm, .xterm-rows) { --font-mono: ${monoFontStack} !important; font-family: ${monoFontStack} !important; }`
       );
     }
     if (chatFontSize > 0) {
-      liveRules.push(
-        `body :is([data-markdown-root], [data-markdown-root] :is(p, li, ul, ol, blockquote, td, th), [data-testid="user-message-bubble"], [data-testid="user-message-bubble"] *, .agy-user-bubble, .agy-user-bubble *, .leading-relaxed:not(:where([role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="tooltip"] *, [data-mention-menu] *, .surface-composer *, [id="kn-studio-host"] *))) { font-size: ${chatSizePx} !important; }`
-      );
+      liveRules.push(`${chatTextSel} { font-size: ${chatSizePx} !important; }`);
     }
     if (codeFontSize > 0) {
       liveRules.push(
-        `body :is(pre, pre *, code, kbd, samp, .monaco-editor .view-lines, .monaco-editor .view-line, .xterm-rows) { font-size: ${codeSizePx} !important; }`
+        `body :is(${preBodySel}, code, ${codeBodySel}, kbd, samp, .monaco-editor .view-lines, .monaco-editor .view-line, .monaco-editor .view-line *, .xterm-rows) { font-size: ${codeSizePx} !important; }`
       );
     }
-    liveRules.push(
-      `body :is([data-markdown-root], [data-markdown-root] :is(p, li, ul, ol, blockquote, td, th), [data-testid="user-message-bubble"], [data-testid="user-message-bubble"] *, .agy-user-bubble, .agy-user-bubble *, .leading-relaxed:not(:where([role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="tooltip"] *, [data-mention-menu] *, .surface-composer *, [id="kn-studio-host"] *))) { line-height: ${lineHeightVal} !important; }`
-    );
+    liveRules.push(`${chatTextSel} { line-height: ${lineHeightVal} !important; }`);
     if (cfg.agentAvatar && cfg.agentAvatar.image === "SVG_STAR") {
       const starUrl = buildGeminiStarSvgUrl(cfg.agentAvatar.bgStops, cfg.agentAvatar.iconStops);
       liveRules.push(
@@ -646,7 +648,7 @@
         queuedSave = false;
         const sentRev = draftRevision;
         const payloadCfg = clone(state.draft);
-        setStatus("Đang lưu & áp dụng...", "busy");
+        setStatus(t("Đang lưu & áp dụng...", "Saving & applying..."), "busy");
         const data = await sendCommand("apply-config", { config: payloadCfg });
         if (data && data.config) {
           state.config = clone(data.config);
@@ -674,10 +676,10 @@
         ok = true;
       } while (queuedSave);
       if (!state.dirty) {
-        setStatus("Đã lưu & đồng bộ live!", "ok");
+        setStatus(t("Đã lưu & đồng bộ live!", "Saved & synced live!"), "ok");
       }
     } catch (e) {
-      setStatus("Lỗi lưu: " + e.message, "err");
+      setStatus(t("Lỗi lưu: ", "Save error: ") + e.message, "err");
       ok = false;
     } finally {
       inFlightSave = false;
@@ -689,11 +691,11 @@
   async function saveCustomCssNow(reRender = false) {
     const braces = countCssBraces(state.customCss || "");
     if (braces.open !== braces.close) {
-      setStatus(`Lỗi CSS: ngoặc { (${braces.open}) ≠ } (${braces.close})`, "err");
+      setStatus(t(`Lỗi CSS: ngoặc { (${braces.open}) ≠ } (${braces.close})`, `CSS error: braces { (${braces.open}) ≠ } (${braces.close})`), "err");
       return false;
     }
     try {
-      setStatus("Đang áp dụng custom.css...", "busy");
+      setStatus(t("Đang áp dụng custom.css...", "Applying custom.css..."), "busy");
       const data = await sendCommand("save-custom-css", { customCss: state.customCss || "" });
       state.customCssDirty = false;
       if (data && typeof data.customCss === "string") {
@@ -718,10 +720,10 @@
         if (activeDragCount > 0) pendingDeferredRender = true;
         else renderBody();
       }
-      setStatus("Đã áp dụng custom.css!", "ok");
+      setStatus(t("Đã áp dụng custom.css!", "Applied custom.css!"), "ok");
       return true;
     } catch (e) {
-      setStatus("Lỗi CSS: " + e.message, "err");
+      setStatus(t("Lỗi CSS: ", "CSS error: ") + e.message, "err");
       return false;
     }
   }
@@ -999,18 +1001,18 @@
   shadow.appendChild(el("style", { text: STUDIO_CSS }));
 
   // Trigger Pill
-  const pill = el("button", { type: "button", class: "pill", title: "Mở Theme Studio (Ctrl+Alt+K)" }, ["🎨 Theme Studio"]);
+  const pill = el("button", { type: "button", class: "pill", title: t("Mở Theme Studio (Ctrl+Alt+K)", "Open Theme Studio (Ctrl+Alt+K)") }, ["🎨 Theme Studio"]);
   shadow.appendChild(pill);
 
   // Main Panel
   const panel = el("div", { class: "panel" });
   const titleBadge = el("span", { class: "badge", text: "kanagawa-wave" });
-  const modeBadge = el("span", { class: "badge", text: "Dark" });
+  const modeBadge = el("span", { class: "badge", text: initialModeIsLight ? "☀️ Light" : "🌙 Dark" });
   const langBtn = el("button", {
     type: "button",
     class: "icon-btn",
-    text: "🌐 VI",
-    title: "Switch language (VI / EN)",
+    text: isEn() ? "🌐 EN" : "🌐 VI",
+    title: t("Chuyển sang English (EN)", "Switch to Tiếng Việt (VI)"),
     onClick: () => {
       const d = state.draft;
       if (!d) return;
@@ -1020,8 +1022,8 @@
       renderAll();
     },
   });
-  const saveBtn = el("button", { type: "button", class: "icon-btn primary", text: "💾 Lưu" });
-  const revertBtn = el("button", { type: "button", class: "icon-btn", text: "↺ Hoàn tác", title: "Hủy thay đổi chưa lưu" });
+  const saveBtn = el("button", { type: "button", class: "icon-btn primary", text: t("💾 Lưu", "💾 Save") });
+  const revertBtn = el("button", { type: "button", class: "icon-btn", text: t("↺ Hoàn tác", "↺ Revert"), title: t("Hủy thay đổi chưa lưu", "Discard unsaved changes") });
   const closeBtn = el("button", { type: "button", class: "icon-btn danger", text: "✕" });
 
   const header = el("div", { class: "header" }, [
@@ -1105,7 +1107,7 @@
   let dragging = false, dX = 0, dY = 0, pLeft = 0, pTop = 0, savedPos = null, dragPointerId = null;
 
   function applyPos(left, top) {
-    const w = panel.offsetWidth || 436;
+    const w = panel.offsetWidth || 460;
     const h = panel.offsetHeight || 500;
     const maxLeft = Math.max(8, window.innerWidth - w - 8);
     const maxTop = Math.max(8, window.innerHeight - h - 8);
@@ -1215,8 +1217,42 @@
     }
     applyLivePreview(state.draft);
     renderAll();
-    setStatus("Đã hoàn tác thay đổi", "ok");
+    setStatus(t("Đã hoàn tác thay đổi", "Reverted unsaved changes"), "ok");
   });
+
+  const APP_POPUP_SELECTOR =
+    '[data-mention-menu], #typeahead-menu:not(:empty), [role="listbox"]:not(:empty), [role="menu"]:not(:empty), [role="dialog"], [role="alertdialog"]';
+
+  function isPopupVisible(node) {
+    if (!node || node.isConnected === false) return false;
+    if (typeof node.getClientRects === "function" && node.getClientRects().length === 0) return false;
+    if (typeof window.getComputedStyle === "function") {
+      const cs = window.getComputedStyle(node);
+      if (cs && (cs.display === "none" || cs.visibility === "hidden")) return false;
+    }
+    if (typeof node.getBoundingClientRect === "function") {
+      const r = node.getBoundingClientRect();
+      if (r && (r.width <= 0 || r.height <= 0)) return false;
+    }
+    return true;
+  }
+
+  function hasVisibleAppPopup() {
+    if (typeof document.querySelectorAll === "function") {
+      const nodes = document.querySelectorAll(APP_POPUP_SELECTOR);
+      if (nodes && typeof nodes.length === "number" && nodes.length > 0) {
+        for (let i = 0; i < nodes.length; i++) {
+          if (isPopupVisible(nodes[i])) return true;
+        }
+        return false;
+      }
+    }
+    if (typeof document.querySelector === "function") {
+      const fallback = document.querySelector(APP_POPUP_SELECTOR);
+      return Boolean(fallback && isPopupVisible(fallback));
+    }
+    return false;
+  }
 
   const onKeyDown = (e) => {
     if ((e.ctrlKey || e.metaKey) && e.altKey && (e.key === "k" || e.key === "K" || e.code === "KeyK")) {
@@ -1225,10 +1261,7 @@
       else openPanel();
     } else if (e.key === "Escape" && panel.classList.contains("open")) {
       if (e.defaultPrevented) return;
-      const openAppPopup = document.querySelector(
-        '[data-mention-menu], #typeahead-menu:not(:empty), [role="listbox"]:not(:empty), [role="menu"]:not(:empty), [role="dialog"], [role="alertdialog"]'
-      );
-      if (openAppPopup) return;
+      if (hasVisibleAppPopup()) return;
       closePanel();
     }
   };
@@ -1236,15 +1269,15 @@
 
   async function refreshState() {
     try {
-      setStatus("Đang tải cấu hình...", "busy");
+      setStatus(t("Đang tải cấu hình...", "Loading configuration..."), "busy");
       const data = await sendCommand("get-state");
       applyReceivedState(data, { force: true });
       if (state.activeTab === "wallpaper" || state.activeTab === "colors") {
         void ensureLibraryThumbs();
       }
-      setStatus("Đã đồng bộ", "ok");
+      setStatus(t("Đã đồng bộ", "Synced"), "ok");
     } catch (e) {
-      setStatus("Lỗi kết nối: " + e.message, "err");
+      setStatus(t("Lỗi kết nối: ", "Connection error: ") + e.message, "err");
     }
   }
 
@@ -1330,7 +1363,7 @@
       class: "color-hex-inp",
       value: initialHex,
       maxlength: "7",
-      title: "Nhập mã màu #RRGGBB",
+      title: t("Nhập mã màu #RRGGBB", "Enter hex color #RRGGBB"),
       onInput: (e) => {
         const parsed = normalizeHex(e.target.value);
         if (parsed) {
@@ -1376,19 +1409,19 @@
     if (pickingImage) return;
     pickingImage = true;
     try {
-      setStatus("Đang mở hộp thoại chọn ảnh...", "busy");
+      setStatus(t("Đang mở hộp thoại chọn ảnh...", "Opening image picker..."), "busy");
       const data = await sendCommand("pick-image", { target, config: state.draft }, 0);
       if (data && data.canceled) {
-        setStatus("Đã hủy chọn ảnh", "ok");
+        setStatus(t("Đã hủy chọn ảnh", "Image selection canceled"), "ok");
         return;
       }
       if (data) {
         draftRevision++;
         applyReceivedState(data, { force: true });
       }
-      setStatus("Đã cập nhật ảnh!", "ok");
+      setStatus(t("Đã cập nhật ảnh!", "Image updated!"), "ok");
     } catch (e) {
-      setStatus("Lỗi chọn ảnh: " + e.message, "err");
+      setStatus(t("Lỗi chọn ảnh: ", "Image picker error: ") + e.message, "err");
     } finally {
       pickingImage = false;
     }
@@ -1399,39 +1432,39 @@
     const fileType = String(file.type || "").toLowerCase();
     const fileName = String(file.name || "drop.png");
     if (fileType ? !fileType.startsWith("image/") : !ALLOWED_IMAGE_EXT_RE.test(fileName)) {
-      setStatus("Chỉ hỗ trợ file ảnh (.png, .jpg, .webp, .avif, .gif, .svg, .bmp)", "err");
+      setStatus(t("Chỉ hỗ trợ file ảnh (.png, .jpg, .webp, .avif, .gif, .svg, .bmp)", "Only image files supported (.png, .jpg, .webp, .avif, .gif, .svg, .bmp)"), "err");
       return;
     }
     if (!file.size) {
-      setStatus("File ảnh rỗng hoặc không hợp lệ", "err");
+      setStatus(t("File ảnh rỗng hoặc không hợp lệ", "Image file is empty or invalid"), "err");
       return;
     }
     if (file.size > MAX_DROP_FILE_BYTES) {
-      setStatus("Ảnh vượt quá giới hạn 15 MB (" + (file.size / (1024 * 1024)).toFixed(1) + " MB)", "err");
+      setStatus(t("Ảnh vượt quá giới hạn 15 MB (", "Image exceeds 15 MB limit (") + (file.size / (1024 * 1024)).toFixed(1) + " MB)", "err");
       return;
     }
 
     const reader = new FileReader();
-    reader.onerror = () => setStatus("Không thể đọc file ảnh (thư mục hoặc file bị khóa)", "err");
-    reader.onabort = () => setStatus("Đã hủy đọc file ảnh", "err");
+    reader.onerror = () => setStatus(t("Không thể đọc file ảnh (thư mục hoặc file bị khóa)", "Could not read image file (locked or inaccessible)"), "err");
+    reader.onabort = () => setStatus(t("Đã hủy đọc file ảnh", "Image read aborted"), "err");
     reader.onload = async () => {
       try {
         const dataUrl = String(reader.result || "");
         if (!dataUrl || !/^data:image\//i.test(dataUrl)) {
-          setStatus("Dữ liệu file không phải ảnh hợp lệ", "err");
+          setStatus(t("Dữ liệu file không phải ảnh hợp lệ", "File data is not a valid image"), "err");
           return;
         }
         if (dataUrl.length > MAX_DATA_URL_CHARS) {
-          setStatus("Ảnh sau mã hóa vượt quá giới hạn dung lượng (22 MB)", "err");
+          setStatus(t("Ảnh sau mã hóa vượt quá giới hạn dung lượng (22 MB)", "Encoded image exceeds 22 MB limit"), "err");
           return;
         }
         const chunkSize = Math.max(49152, Math.ceil(dataUrl.length / 400));
         const total = Math.max(1, Math.ceil(dataUrl.length / chunkSize));
         const uploadId = "up-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
-        setStatus(`Đang tải ảnh (${Math.round(file.size / 1024)} KB)...`, "busy");
+        setStatus(t(`Đang tải ảnh (${Math.round(file.size / 1024)} KB)...`, `Uploading image (${Math.round(file.size / 1024)} KB)...`), "busy");
         let lastRes = null;
         for (let i = 0; i < total; i++) {
-          if (total > 1) setStatus(`Đang tải ảnh (${i + 1}/${total})...`, "busy");
+          if (total > 1) setStatus(t(`Đang tải ảnh (${i + 1}/${total})...`, `Uploading image (${i + 1}/${total})...`), "busy");
           const payload = {
             uploadId,
             filename: fileName,
@@ -1446,12 +1479,12 @@
         if (lastRes && lastRes.complete !== false) {
           draftRevision++;
           applyReceivedState(lastRes, { force: true });
-          setStatus("Đã áp dụng ảnh kéo-thả!", "ok");
+          setStatus(t("Đã áp dụng ảnh kéo-thả!", "Dropped image applied!"), "ok");
         } else {
-          setStatus("Tải ảnh chưa hoàn tất", "err");
+          setStatus(t("Tải ảnh chưa hoàn tất", "Image upload incomplete"), "err");
         }
       } catch (e) {
-        setStatus("Lỗi tải ảnh: " + e.message, "err");
+        setStatus(t("Lỗi tải ảnh: ", "Upload error: ") + e.message, "err");
       }
     };
     reader.readAsDataURL(file);
@@ -1676,11 +1709,11 @@
     const seg = el("div", { class: "seg" }, [
       el("button", {
         type: "button", class: !isLightTab ? "active" : "", text: t("🌙 Dark Mode (Chính)", "🌙 Dark Mode (Primary)"),
-        onClick: () => { state.wpModeTab = "dark"; renderBody(); },
+        onClick: () => { userEditedModeTabs = true; state.wpModeTab = "dark"; renderBody(); },
       }),
       el("button", {
         type: "button", class: isLightTab ? "active" : "", text: t("☀️ Light Mode (Riêng)", "☀️ Light Mode (Custom)"),
-        onClick: () => { state.wpModeTab = "light"; renderBody(); },
+        onClick: () => { userEditedModeTabs = true; state.wpModeTab = "light"; renderBody(); },
       }),
     ]);
 
@@ -1927,8 +1960,8 @@
     // 2. Color pickers (Dark vs Light)
     const isLightC = state.colorModeTab === "light";
     const cSeg = el("div", { class: "seg" }, [
-      el("button", { type: "button", class: !isLightC ? "active" : "", text: t("🌙 Bảng màu Dark", "🌙 Dark Palette"), onClick: () => { state.colorModeTab = "dark"; renderBody(); } }),
-      el("button", { type: "button", class: isLightC ? "active" : "", text: t("☀️ Bảng màu Light", "☀️ Light Palette"), onClick: () => { state.colorModeTab = "light"; renderBody(); } }),
+      el("button", { type: "button", class: !isLightC ? "active" : "", text: t("🌙 Bảng màu Dark", "🌙 Dark Palette"), onClick: () => { userEditedModeTabs = true; state.colorModeTab = "dark"; renderBody(); } }),
+      el("button", { type: "button", class: isLightC ? "active" : "", text: t("☀️ Bảng màu Light", "☀️ Light Palette"), onClick: () => { userEditedModeTabs = true; state.colorModeTab = "light"; renderBody(); } }),
     ]);
 
     const colorKeys = isLightC
@@ -2410,7 +2443,7 @@
     while (body.firstChild) body.removeChild(body.firstChild);
     const d = state.draft;
     if (!d) {
-      body.appendChild(el("div", { style: { textAlign: "center", padding: "30px", color: "#CFC8A3" }, text: "Đang tải dữ liệu Theme Studio..." }));
+      body.appendChild(el("div", { style: { textAlign: "center", padding: "30px", color: "#CFC8A3" }, text: t("Đang tải dữ liệu Theme Studio...", "Loading Theme Studio...") }));
       return;
     }
     if (state.activeTab === "profiles") renderProfilesTab(d);
@@ -2440,13 +2473,67 @@
     if (panel.classList.contains("open")) renderBody();
   }
 
-  // Watch body class changes (dark <-> light toggle)
+  // Watch body & Antigravity IDE .monaco-workbench class changes (dark <-> light toggle)
   let bodyObserver = null;
+  let workbenchObserver = null;
+  let observedWorkbench = null;
+
+  function hasWorkbenchThemeClass(wb) {
+    return Boolean(
+      wb &&
+      (wb.classList.contains("vs") || wb.classList.contains("vs-dark") || wb.classList.contains("hc-light") || wb.classList.contains("hc-black"))
+    );
+  }
+
+  function attachWorkbenchObserver() {
+    const wb = typeof document.querySelector === "function" ? document.querySelector(".monaco-workbench") : null;
+    if (wb === observedWorkbench && (!wb || wb.isConnected !== false)) return Boolean(wb);
+    if (workbenchObserver) {
+      workbenchObserver.disconnect();
+      workbenchObserver = null;
+    }
+    observedWorkbench = wb;
+    if (wb) {
+      workbenchObserver = new MutationObserver(() => syncDomThemeMode());
+      workbenchObserver.observe(wb, { attributes: true, attributeFilter: ["class"] });
+      return true;
+    }
+    return false;
+  }
+
+  function syncDomThemeMode() {
+    const hasWb = attachWorkbenchObserver();
+    const isLight = isLightDomMode();
+    modeBadge.textContent = isLight ? "☀️ Light" : "🌙 Dark";
+    if (hasWb && !initialWorkbenchModeSynced && hasWorkbenchThemeClass(observedWorkbench)) {
+      initialWorkbenchModeSynced = true;
+      if (!userEditedModeTabs) {
+        const nextMode = isLight ? "light" : "dark";
+        const changed = state.wpModeTab !== nextMode || state.colorModeTab !== nextMode;
+        state.wpModeTab = nextMode;
+        state.colorModeTab = nextMode;
+        if (changed && panel.classList.contains("open")) renderBody();
+      }
+    }
+  }
+
   if (document.body) {
+    const foundWbInitially = attachWorkbenchObserver();
+    if (foundWbInitially && hasWorkbenchThemeClass(observedWorkbench)) initialWorkbenchModeSynced = true;
     bodyObserver = new MutationObserver(() => {
-      modeBadge.textContent = isLightDomMode() ? "☀️ Light" : "🌙 Dark";
+      const hadConnectedWb = Boolean(observedWorkbench && observedWorkbench.isConnected !== false);
+      syncDomThemeMode();
+      if (!hadConnectedWb && observedWorkbench && bodyObserver) {
+        bodyObserver.disconnect();
+        bodyObserver.observe(document.body, { attributes: true, attributeFilter: ["class"], childList: true });
+      }
     });
-    bodyObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    bodyObserver.observe(
+      document.body,
+      foundWbInitially
+        ? { attributes: true, attributeFilter: ["class"], childList: true }
+        : { attributes: true, attributeFilter: ["class"], childList: true, subtree: true }
+    );
   }
 
   // Initial sync of pill visibility
@@ -2469,6 +2556,11 @@
       window.removeEventListener("pointercancel", onPointerCancel);
       window.removeEventListener("blur", onWindowBlur);
       window.removeEventListener("resize", onWindowResize);
+      if (workbenchObserver) {
+        workbenchObserver.disconnect();
+        workbenchObserver = null;
+        observedWorkbench = null;
+      }
       if (bodyObserver) {
         bodyObserver.disconnect();
         bodyObserver = null;

@@ -161,7 +161,8 @@ Loading & Studio:
   --loading-title <text>         --loading-subtitle <text>
   --loading-style <style>        kanagawa-wave | minimal | terminal
   --loading-show-emblem <bool>   --loading-show-progress <bool>
-  --studio-pill <bool>           --studio-pill-pos <pos>       --studio-lang <vi|en>`);
+  --studio-pill <bool>           --studio-pill-pos <bottom-right|bottom-left|top-right>
+  --studio-lang <vi|en>`);
 }
 
 function parseArgs(argv) {
@@ -253,7 +254,11 @@ function main() {
     return;
   }
 
-  let cfg = tb.mergeConfig(JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8")));
+  let rawCfg = {};
+  if (fs.existsSync(CONFIG_PATH)) {
+    rawCfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8").replace(/^\uFEFF/, ""));
+  }
+  let cfg = tb.mergeConfig(rawCfg);
   if (!args["dry-run"]) {
     tb.ensureCustomCssFile(THEME_DIR);
     tb.ensureDefaultProfiles(THEME_DIR, cfg);
@@ -362,7 +367,9 @@ function main() {
   if (args["loading-show-progress"] !== undefined) cfg.loading.showProgress = parseBool(args["loading-show-progress"], "loading-show-progress");
 
   if (args["studio-pill"] !== undefined) cfg.studio.showTriggerPill = parseBool(args["studio-pill"], "studio-pill");
-  if (args["studio-pill-pos"] !== undefined) cfg.studio.pillPosition = args["studio-pill-pos"];
+  if (args["studio-pill-pos"] !== undefined) {
+    cfg.studio.pillPosition = parseEnum(args["studio-pill-pos"].trim().toLowerCase(), ["bottom-right", "bottom-left", "top-right"], "studio-pill-pos");
+  }
   if (args["studio-lang"] !== undefined) cfg.studio.language = parseEnum(args["studio-lang"].toLowerCase(), ["vi", "en"], "studio-lang");
 
   if (args["save-profile"] !== undefined) {
@@ -372,7 +379,7 @@ function main() {
     const candidateId = tb.slugifyProfileId(saveName);
     const existingProfiles = tb.listProfiles(THEME_DIR);
     const conflict = existingProfiles.find((p) => p.id === candidateId && p.builtIn);
-    if (conflict) {
+    if ((tb.BUILT_IN_PROFILE_IDS && tb.BUILT_IN_PROFILE_IDS.has(candidateId)) || conflict) {
       throw new Error(`Built-in profile "${candidateId}" cannot be overwritten; save under a new name.`);
     }
   }

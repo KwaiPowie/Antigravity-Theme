@@ -124,9 +124,9 @@
 }
 
 /* ---- Dark Mode Tokens ---- */
-body:not(.theme-light),
-body[data-agy-theme]:not(.theme-light),
-body[data-agy-theme]:not(.theme-light) .agy-inset-shell {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))),
+body[data-agy-theme]:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))),
+body[data-agy-theme]:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) .agy-inset-shell {
   --background: transparent !important;
   --shell: transparent !important;
   --shell-canvas: transparent !important;
@@ -201,7 +201,7 @@ body[data-agy-theme]:not(.theme-light) .agy-inset-shell {
 }
 
 /* ---- Light Mode Tokens ---- */
-body.theme-light,
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))),
 body.theme-light[data-agy-theme],
 body.theme-light[data-agy-theme] .agy-inset-shell {
   --background: transparent !important;
@@ -278,8 +278,8 @@ body.theme-light[data-agy-theme] .agy-inset-shell {
 }
 
 /* Tailwind v4 --color-* bridge */
-body:not(.theme-light),
-body.theme-light {
+body,
+body[data-agy-theme] {
   --color-background: var(--background) !important;
   --color-foreground: var(--foreground) !important;
   --color-content: var(--content) !important;
@@ -312,7 +312,7 @@ html {
   overflow: clip !important;
 }
 
-html:has(> body.theme-light) {
+html:has(> body.theme-light, > body > .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)) {
   background-color: rgb(var(--kn-l-chrome-rgb, 243, 228, 234)) !important;
 }
 
@@ -331,7 +331,7 @@ html::before {
   background-repeat: no-repeat;
 }
 
-html:has(> body.theme-light)::before {
+html:has(> body.theme-light, > body > .monaco-workbench:is(.vs:not(.vs-dark), .hc-light))::before {
   background-position: var(--kn-wp-pos-light, var(--kn-wp-pos, center top));
 }
 
@@ -340,8 +340,7 @@ body {
   color: var(--foreground) !important;
 }
 
-body:not(.theme-light)::before,
-body.theme-light::before {
+body::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -355,11 +354,11 @@ body.theme-light::before {
   background-repeat: no-repeat;
 }
 
-body:not(.theme-light)::before {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light))))::before {
   background-image: var(--kn-scrim-image-dark);
 }
 
-body.theme-light::before {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light))))::before {
   background-image: var(--kn-scrim-image-light);
 }
 
@@ -391,7 +390,7 @@ html body .h-screen.w-screen,
 html body .h-screen.w-screen > div:not([data-testid="title-menu-bar"]),
 html body main,
 html body [data-main-content-body] [class*="overflow-y-auto"]:not(:where([role="listbox"], [role="menu"], [role="dialog"], [role="alertdialog"], [role="tooltip"], [data-mention-menu], [id="typeahead-menu"], [id*="typeahead"], .px-menu-content, .agy-overlay, .surface-glass, .monaco-editor, .xterm, [class*="code-block"])),
-html body [class*="bg-background"]:not(:where([role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="tooltip"], [data-mention-menu], [data-mention-menu] *, [id="typeahead-menu"], [id="typeahead-menu"] *, [id*="typeahead"], .px-menu-content, .px-menu-content *, .agy-overlay, .surface-glass, [data-radix-menu-content], [data-radix-popper-content-wrapper] *, [data-floating-ui-portal] *, [class*="bg-card"], [id="kn-studio-host"], [id="kn-studio-host"] *)),
+html body :is([class~="bg-background"], [class*=" bg-background/"], [class^="bg-background/"]):not(:where([role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="tooltip"], [data-mention-menu], [data-mention-menu] *, [id="typeahead-menu"], [id="typeahead-menu"] *, [id*="typeahead"], .px-menu-content, .px-menu-content *, .agy-overlay, .surface-glass, [data-radix-menu-content], [data-radix-popper-content-wrapper] *, [data-floating-ui-portal] *, [class*="bg-card"], button, [role="button"], [role="switch"], [role="tab"], [id="kn-studio-host"], [id="kn-studio-host"] *)),
 html body [class*="bg-content"]:not(:where([role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="tooltip"], [data-mention-menu], [data-mention-menu] *, [id="typeahead-menu"], [id="typeahead-menu"] *, [id*="typeahead"], .px-menu-content, .px-menu-content *, .agy-overlay, .surface-glass, [data-radix-menu-content], [data-radix-popper-content-wrapper] *, [data-floating-ui-portal] *, [id="kn-studio-host"], [id="kn-studio-host"] *)),
 html body [class*="bg-editor"] {
   background-color: transparent !important;
@@ -411,7 +410,7 @@ html body [data-side-panel-focus-scope="true"]:not([data-side-panel-body] *) {
   border: 1px solid rgba(var(--kn-d-aqua-rgb), 0.18) !important;
 }
 
-html body.theme-light [data-side-panel-focus-scope="true"]:not([data-side-panel-body] *) {
+html :is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-side-panel-focus-scope="true"]:not([data-side-panel-body] *) {
   background-color: rgba(var(--kn-l-over-rgb), var(--kn-panel-a)) !important;
   border: 1px solid rgba(var(--kn-l-pri-rgb), 0.18) !important;
 }
@@ -435,7 +434,7 @@ html body .agy-sheet[data-side-panel-maximized="true"] [data-side-panel-focus-sc
   background-color: rgba(var(--kn-d-side-rgb), var(--kn-panel-max-a)) !important;
 }
 
-html body.theme-light .agy-sheet[data-side-panel-maximized="true"] [data-side-panel-focus-scope="true"]:not([data-side-panel-body] *) {
+html :is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) .agy-sheet[data-side-panel-maximized="true"] [data-side-panel-focus-scope="true"]:not([data-side-panel-body] *) {
   background-color: rgba(var(--kn-l-over-rgb), var(--kn-panel-max-a)) !important;
 }
 
@@ -463,8 +462,8 @@ html body [data-testid="side-panel-popover"] > div.surface-opaque {
   border-radius: 0 !important;
 }
 
-body:not(.theme-light) [data-side-panel-strip],
-body.theme-light [data-side-panel-strip] {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-side-panel-strip],
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-side-panel-strip] {
   border-bottom: none !important;
 }
 
@@ -484,7 +483,7 @@ html body :is(.agy-sheet[data-sheet-inset] [data-main-content-body], [data-main-
   overflow: hidden !important;
 }
 
-html body.theme-light :is(.agy-sheet[data-sheet-inset] [data-main-content-body], [data-main-content-body]):not([data-side-panel-focus-scope="true"] *) {
+html :is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.agy-sheet[data-sheet-inset] [data-main-content-body], [data-main-content-body]):not([data-side-panel-focus-scope="true"] *) {
   background-color: rgba(var(--kn-l-over-rgb), var(--kn-panel-a)) !important;
   border-color: rgba(var(--kn-l-pri-rgb), 0.16) !important;
 }
@@ -494,29 +493,29 @@ html body .agy-sheet[data-sheet-inset] :is([data-main-content-body], [data-side-
 }
 
 /* Prevent inner diff/review cards inside right panel from double-stacking darkness */
-body:not(.theme-light) [data-side-panel-focus-scope="true"] [class~="bg-card"]:not(:where(button, [role="button"], a, [role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"], [data-mention-menu], [id="typeahead-menu"], .px-menu-content, .surface-composer, .surface-composer-card)) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-side-panel-focus-scope="true"] [class~="bg-card"]:not(:where(button, [role="button"], a, [role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"], [data-mention-menu], [id="typeahead-menu"], .px-menu-content, .surface-composer, .surface-composer-card)) {
   background-color: rgba(var(--kn-d-surf-rgb), calc(var(--kn-card-a) * 0.64)) !important;
 }
 
-body.theme-light [data-side-panel-focus-scope="true"] [class~="bg-card"]:not(:where(button, [role="button"], a, [role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"], [data-mention-menu], [id="typeahead-menu"], .px-menu-content, .surface-composer, .surface-composer-card)) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-side-panel-focus-scope="true"] [class~="bg-card"]:not(:where(button, [role="button"], a, [role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"], [data-mention-menu], [id="typeahead-menu"], .px-menu-content, .surface-composer, .surface-composer-card)) {
   background-color: rgba(var(--kn-l-surf-rgb), calc(var(--kn-card-a) * 0.72)) !important;
 }
 
 /* Monaco code editor & interactive terminal (Dark + Light, avoids double-stacking inside side panel) */
-body:not(.theme-light) :is(.monaco-editor, .monaco-editor-background, .xterm, .xterm-viewport) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.monaco-editor, .monaco-editor-background, .xterm, .xterm-viewport) {
   background-color: rgba(var(--kn-d-side-rgb), var(--kn-editor-a)) !important;
 }
 
-body:not(.theme-light) [data-side-panel-focus-scope="true"] :is(.monaco-editor, .monaco-editor-background, .xterm, .xterm-viewport) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-side-panel-focus-scope="true"] :is(.monaco-editor, .monaco-editor-background, .xterm, .xterm-viewport) {
   background-color: rgba(var(--kn-d-side-rgb), var(--kn-editor-side-a)) !important;
 }
 
-body.theme-light :is(.monaco-editor, .monaco-editor-background, .xterm, .xterm-viewport) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.monaco-editor, .monaco-editor-background, .xterm, .xterm-viewport) {
   background-color: rgba(var(--kn-l-side-rgb), var(--kn-editor-a)) !important;
   color: var(--kl-ink1) !important;
 }
 
-body.theme-light [data-side-panel-focus-scope="true"] :is(.monaco-editor, .monaco-editor-background, .xterm, .xterm-viewport) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-side-panel-focus-scope="true"] :is(.monaco-editor, .monaco-editor-background, .xterm, .xterm-viewport) {
   background-color: rgba(var(--kn-l-side-rgb), var(--kn-editor-side-a)) !important;
 }
 
@@ -525,19 +524,19 @@ body.theme-light [data-side-panel-focus-scope="true"] :is(.monaco-editor, .monac
 }
 
 /* Soften Monaco inline diff insert/delete fills so edited code remains readable */
-body:not(.theme-light) .monaco-editor :is(.line-insert, .dirty-diff-added-pattern) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) .monaco-editor :is(.line-insert, .dirty-diff-added-pattern) {
   background-color: rgba(152, 187, 108, 0.12) !important;
 }
 
-body:not(.theme-light) .monaco-editor .line-delete {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) .monaco-editor .line-delete {
   background-color: rgba(228, 104, 118, 0.14) !important;
 }
 
-body.theme-light .monaco-editor :is(.line-insert, .dirty-diff-added-pattern) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) .monaco-editor :is(.line-insert, .dirty-diff-added-pattern) {
   background-color: rgba(111, 137, 78, 0.14) !important;
 }
 
-body.theme-light .monaco-editor .line-delete {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) .monaco-editor .line-delete {
   background-color: rgba(200, 64, 83, 0.14) !important;
 }
 
@@ -550,11 +549,11 @@ body.theme-light .monaco-editor .line-delete {
   border-bottom: none !important;
 }
 
-body:not(.theme-light) [data-testid="title-menu-bar"] {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="title-menu-bar"] {
   background: rgba(var(--kn-d-chrome-rgb), var(--kn-titlebar-a)) !important;
 }
 
-body.theme-light [data-testid="title-menu-bar"] {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="title-menu-bar"] {
   background: rgba(var(--kn-l-chrome-rgb), var(--kn-titlebar-a)) !important;
 }
 
@@ -564,7 +563,7 @@ html body :is([data-testid="sidebar-split"] > div:first-child, [data-peek-surfac
   --color-sidebar: var(--sidebar) !important;
 }
 
-html body.theme-light :is([data-testid="sidebar-split"] > div:first-child, [data-peek-surface]) {
+html :is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-testid="sidebar-split"] > div:first-child, [data-peek-surface]) {
   --sidebar: rgba(var(--kn-l-side-rgb), var(--kn-sidebar-a)) !important;
   --color-sidebar: var(--sidebar) !important;
 }
@@ -586,12 +585,12 @@ html body.theme-light :is([data-testid="sidebar-split"] > div:first-child, [data
   overflow: visible !important;
 }
 
-body:not(.theme-light) :is([data-testid="conversation-list-sidebar"], [data-testid="settings-sidebar"], div[role="navigation"][aria-label="Sidebar"]):not([role="navigation"] [data-testid="conversation-list-sidebar"]) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-testid="conversation-list-sidebar"], [data-testid="settings-sidebar"], div[role="navigation"][aria-label="Sidebar"]):not([role="navigation"] [data-testid="conversation-list-sidebar"]) {
   background-image: linear-gradient(180deg, rgba(var(--kn-d-side-rgb), var(--kn-sidebar-top-a)) 0%, rgba(var(--kn-d-side-rgb), var(--kn-sidebar-mid-a)) 55%, rgba(var(--kn-d-side-rgb), var(--kn-sidebar-top-a)) 100%) !important;
   border-color: rgba(var(--kn-d-blue-rgb), 0.16) !important;
 }
 
-body.theme-light :is([data-testid="conversation-list-sidebar"], [data-testid="settings-sidebar"], div[role="navigation"][aria-label="Sidebar"]):not([role="navigation"] [data-testid="conversation-list-sidebar"]) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-testid="conversation-list-sidebar"], [data-testid="settings-sidebar"], div[role="navigation"][aria-label="Sidebar"]):not([role="navigation"] [data-testid="conversation-list-sidebar"]) {
   background-image: linear-gradient(180deg, rgba(var(--kn-l-side-rgb), var(--kn-sidebar-top-a)) 0%, rgba(var(--kn-l-side-rgb), var(--kn-sidebar-mid-a)) 55%, rgba(var(--kn-l-side-rgb), var(--kn-sidebar-top-a)) 100%) !important;
   border-color: rgba(var(--kn-l-pri-rgb), 0.16) !important;
 }
@@ -630,11 +629,11 @@ div[role="navigation"][aria-label="Sidebar"] div[class*="sticky"] {
   z-index: 2 !important;
 }
 
-body:not(.theme-light) :is([data-testid="conversation-list-sidebar"], div[role="navigation"][aria-label="Sidebar"]) div[class*="sticky"] {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-testid="conversation-list-sidebar"], div[role="navigation"][aria-label="Sidebar"]) div[class*="sticky"] {
   background-color: rgba(var(--kn-d-side-rgb), 0.88) !important;
 }
 
-body.theme-light :is([data-testid="conversation-list-sidebar"], div[role="navigation"][aria-label="Sidebar"]) div[class*="sticky"] {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-testid="conversation-list-sidebar"], div[role="navigation"][aria-label="Sidebar"]) div[class*="sticky"] {
   background-color: rgba(var(--kn-l-side-rgb), 0.92) !important;
 }
 
@@ -646,7 +645,7 @@ body.theme-light :is([data-testid="conversation-list-sidebar"], div[role="naviga
   border-radius: 8px !important;
 }
 
-body.theme-light :is([data-testid="conversation-list-sidebar"], div[role="navigation"][aria-label="Sidebar"]) :is([class~="bg-sidebar-secondary"], [data-selected="true"]) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-testid="conversation-list-sidebar"], div[role="navigation"][aria-label="Sidebar"]) :is([class~="bg-sidebar-secondary"], [data-selected="true"]) {
   border-color: rgba(var(--kn-l-pri-rgb), 0.42) !important;
 }
 
@@ -689,49 +688,49 @@ button[data-project-card="true"],
 }
 
 /* Soft slate folder pills on project headers */
-body:not(.theme-light) :is(button[data-project-card="true"], [data-testid="project-header"]) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(button[data-project-card="true"], [data-testid="project-header"]) {
   background-color: rgba(var(--kn-d-sel-rgb), 0.44) !important;
 }
 
-body:not(.theme-light) :is(button[data-project-card="true"], [data-testid="project-header"]):hover {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(button[data-project-card="true"], [data-testid="project-header"]):hover {
   background-color: rgba(var(--kn-d-sel-rgb), 0.68) !important;
 }
 
-body.theme-light :is(button[data-project-card="true"], [data-testid="project-header"]) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(button[data-project-card="true"], [data-testid="project-header"]) {
   background-color: color-mix(in srgb, var(--kl-white0) 46%, transparent) !important;
 }
 
-body.theme-light :is(button[data-project-card="true"], [data-testid="project-header"]):hover {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(button[data-project-card="true"], [data-testid="project-header"]):hover {
   background-color: color-mix(in srgb, var(--kl-white0) 74%, transparent) !important;
 }
 
 /* Subtle section dividers & soft nav/footer pills */
-body:not(.theme-light) div[role="navigation"][aria-label="Sidebar"] > div.h-px.shrink-0 {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) div[role="navigation"][aria-label="Sidebar"] > div.h-px.shrink-0 {
   background-color: rgba(var(--kn-d-aqua-rgb), 0.14) !important;
 }
 
-body.theme-light div[role="navigation"][aria-label="Sidebar"] > div.h-px.shrink-0 {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) div[role="navigation"][aria-label="Sidebar"] > div.h-px.shrink-0 {
   background-color: rgba(var(--kn-l-pri-rgb), 0.14) !important;
 }
 
-body:not(.theme-light) div[role="navigation"][aria-label="Sidebar"] :is([data-testid="automations-button"], a[href*="customizations"], [data-testid="settings-button"]):not([class*="bg-sidebar-secondary"]) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) div[role="navigation"][aria-label="Sidebar"] :is([data-testid="automations-button"], a[href*="customizations"], [data-testid="settings-button"]):not([class*="bg-sidebar-secondary"]) {
   background-color: rgba(var(--kn-d-surf-rgb), 0.24) !important;
   border: 1px solid transparent !important;
   border-radius: 8px !important;
 }
 
-body:not(.theme-light) div[role="navigation"][aria-label="Sidebar"] :is([data-testid="automations-button"], a[href*="customizations"], [data-testid="settings-button"]):hover {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) div[role="navigation"][aria-label="Sidebar"] :is([data-testid="automations-button"], a[href*="customizations"], [data-testid="settings-button"]):hover {
   background-color: rgba(var(--kn-d-sel-rgb), 0.56) !important;
   border-color: rgba(var(--kn-d-aqua-rgb), 0.22) !important;
 }
 
-body.theme-light div[role="navigation"][aria-label="Sidebar"] :is([data-testid="automations-button"], a[href*="customizations"], [data-testid="settings-button"]):not([class*="bg-sidebar-secondary"]) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) div[role="navigation"][aria-label="Sidebar"] :is([data-testid="automations-button"], a[href*="customizations"], [data-testid="settings-button"]):not([class*="bg-sidebar-secondary"]) {
   background-color: color-mix(in srgb, var(--kl-white0) 24%, transparent) !important;
   border: 1px solid transparent !important;
   border-radius: 8px !important;
 }
 
-body.theme-light div[role="navigation"][aria-label="Sidebar"] :is([data-testid="automations-button"], a[href*="customizations"], [data-testid="settings-button"]):hover {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) div[role="navigation"][aria-label="Sidebar"] :is([data-testid="automations-button"], a[href*="customizations"], [data-testid="settings-button"]):hover {
   background-color: color-mix(in srgb, var(--kl-white0) 56%, transparent) !important;
   border-color: rgba(var(--kn-l-pri-rgb), 0.18) !important;
 }
@@ -742,8 +741,8 @@ body.theme-light div[role="navigation"][aria-label="Sidebar"] :is([data-testid="
   box-shadow: none !important;
 }
 
-/* + New Conversation CTA pill (Dark + Light) */
-body:not(.theme-light) :is(a, button, [role="button"])[class*="bg-card"]:not(:where([data-project-card="true"], [role="menuitem"], [role="option"], [role="listbox"] *, [role="menu"] *)) {
+/* + New Conversation CTA pill (Dark + Light; exact class token bg-card only, never hover:bg-card or bg-card-border) */
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(a, button, [role="button"]):is([class~="bg-card"], [class~="!bg-card"]):not(:where([data-project-card="true"], [role="menuitem"], [role="option"], [role="listbox"] *, [role="menu"] *)) {
   background: linear-gradient(135deg, rgba(var(--kn-d-sel-rgb), 0.84), rgba(var(--kn-d-aqua-rgb), 0.26)) !important;
   border: 1px solid rgba(var(--kn-d-aqua-rgb), 0.44) !important;
   border-radius: 10px !important;
@@ -751,7 +750,7 @@ body:not(.theme-light) :is(a, button, [role="button"])[class*="bg-card"]:not(:wh
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.24) !important;
 }
 
-body.theme-light :is(a, button, [role="button"])[class*="bg-card"]:not(:where([data-project-card="true"], [role="menuitem"], [role="option"], [role="listbox"] *, [role="menu"] *)) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(a, button, [role="button"]):is([class~="bg-card"], [class~="!bg-card"]):not(:where([data-project-card="true"], [role="menuitem"], [role="option"], [role="listbox"] *, [role="menu"] *)) {
   background: linear-gradient(135deg, rgba(var(--kn-l-surf-rgb), 0.92), color-mix(in srgb, var(--kl-white0) 84%, transparent)) !important;
   border: 1px solid rgba(var(--kn-l-pri-rgb), 0.34) !important;
   border-radius: 10px !important;
@@ -759,7 +758,7 @@ body.theme-light :is(a, button, [role="button"])[class*="bg-card"]:not(:where([d
   box-shadow: 0 2px 8px rgba(var(--kn-l-pri-rgb), 0.12) !important;
 }
 
-:is(a, button, [role="button"])[class*="bg-card"]:not(:where([data-project-card="true"], [role="menuitem"], [role="option"], [role="listbox"] *, [role="menu"] *)):hover {
+:is(a, button, [role="button"]):is([class~="bg-card"], [class~="!bg-card"]):not(:where([data-project-card="true"], [role="menuitem"], [role="option"], [role="listbox"] *, [role="menu"] *)):hover {
   border-color: var(--primary) !important;
 }
 
@@ -767,7 +766,7 @@ body.theme-light :is(a, button, [role="button"])[class*="bg-card"]:not(:where([d
    3. Reading Clarity, Avatars & Slash-Safe Composer
    ============================================================================ */
 /* Assistant response surface — strictly scoped away from menus, dialogs, tooltips & composer */
-body :is(.leading-relaxed, [class*="prose"]):not(:where([role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"], [role="tooltip"], [data-mention-menu], [id="typeahead-menu"], .px-menu-content, .surface-composer, .surface-composer-card, .agy-overlay, .surface-glass, button, [role="button"], [role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="alertdialog"] *, [role="tooltip"] *, [data-mention-menu] *, [id="typeahead-menu"] *, .px-menu-content *, .surface-composer *, .agy-overlay *, .surface-glass *, [data-radix-popper-content-wrapper] *, [data-floating-ui-portal] *, button *, [role="button"] *, [id="kn-studio-host"], [id="kn-studio-host"] *)) {
+body :is(.leading-relaxed, [class*="prose"]):not(:where([role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"], [role="tooltip"], [data-mention-menu], [id="typeahead-menu"], .px-menu-content, .surface-composer, .surface-composer-card, .agy-overlay, .surface-glass, button, [role="button"], [role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="alertdialog"] *, [role="tooltip"] *, [data-mention-menu] *, [id="typeahead-menu"] *, .px-menu-content *, .surface-composer *, .agy-overlay *, .surface-glass *, [data-radix-popper-content-wrapper] *, [data-floating-ui-portal] *, button *, [role="button"] *, .gettingStartedContainer, .gettingStartedContainer *, .extension-editor, .extension-editor *, .settings-editor, .settings-editor *, .monaco-hover, .monaco-hover *, .notification-list-item, .notification-list-item *, .antigravity-welcome-container, .antigravity-welcome-container *, [id="kn-studio-host"], [id="kn-studio-host"] *)) {
   border-radius: var(--kn-card-radius) !important;
   padding: 12px 16px !important;
   line-height: var(--kn-line-height) !important;
@@ -775,13 +774,13 @@ body :is(.leading-relaxed, [class*="prose"]):not(:where([role="menu"], [role="li
   backdrop-filter: var(--kn-backdrop) !important;
 }
 
-body:not(.theme-light) :is(.leading-relaxed, [class*="prose"]):not(:where([role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"], [role="tooltip"], [data-mention-menu], [id="typeahead-menu"], .px-menu-content, .surface-composer, .surface-composer-card, .agy-overlay, .surface-glass, button, [role="button"], [role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="alertdialog"] *, [role="tooltip"] *, [data-mention-menu] *, [id="typeahead-menu"] *, .px-menu-content *, .surface-composer *, .agy-overlay *, .surface-glass *, [data-radix-popper-content-wrapper] *, [data-floating-ui-portal] *, button *, [role="button"] *, [id="kn-studio-host"], [id="kn-studio-host"] *)) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.leading-relaxed, [class*="prose"]):not(:where([role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"], [role="tooltip"], [data-mention-menu], [id="typeahead-menu"], .px-menu-content, .surface-composer, .surface-composer-card, .agy-overlay, .surface-glass, button, [role="button"], [role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="alertdialog"] *, [role="tooltip"] *, [data-mention-menu] *, [id="typeahead-menu"] *, .px-menu-content *, .surface-composer *, .agy-overlay *, .surface-glass *, [data-radix-popper-content-wrapper] *, [data-floating-ui-portal] *, button *, [role="button"] *, .gettingStartedContainer, .gettingStartedContainer *, .extension-editor, .extension-editor *, .settings-editor, .settings-editor *, .monaco-hover, .monaco-hover *, .notification-list-item, .notification-list-item *, .antigravity-welcome-container, .antigravity-welcome-container *, [id="kn-studio-host"], [id="kn-studio-host"] *)) {
   background-color: rgba(var(--kn-d-surf-rgb), var(--kn-chat-a)) !important;
   border: 1px solid rgba(var(--kn-d-blue-rgb), 0.15) !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18) !important;
 }
 
-body.theme-light :is(.leading-relaxed, [class*="prose"]):not(:where([role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"], [role="tooltip"], [data-mention-menu], [id="typeahead-menu"], .px-menu-content, .surface-composer, .surface-composer-card, .agy-overlay, .surface-glass, button, [role="button"], [role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="alertdialog"] *, [role="tooltip"] *, [data-mention-menu] *, [id="typeahead-menu"] *, .px-menu-content *, .surface-composer *, .agy-overlay *, .surface-glass *, [data-radix-popper-content-wrapper] *, [data-floating-ui-portal] *, button *, [role="button"] *, [id="kn-studio-host"], [id="kn-studio-host"] *)) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.leading-relaxed, [class*="prose"]):not(:where([role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"], [role="tooltip"], [data-mention-menu], [id="typeahead-menu"], .px-menu-content, .surface-composer, .surface-composer-card, .agy-overlay, .surface-glass, button, [role="button"], [role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="alertdialog"] *, [role="tooltip"] *, [data-mention-menu] *, [id="typeahead-menu"] *, .px-menu-content *, .surface-composer *, .agy-overlay *, .surface-glass *, [data-radix-popper-content-wrapper] *, [data-floating-ui-portal] *, button *, [role="button"] *, .gettingStartedContainer, .gettingStartedContainer *, .extension-editor, .extension-editor *, .settings-editor, .settings-editor *, .monaco-hover, .monaco-hover *, .notification-list-item, .notification-list-item *, .antigravity-welcome-container, .antigravity-welcome-container *, [id="kn-studio-host"], [id="kn-studio-host"] *)) {
   background-color: rgba(var(--kn-l-surf-rgb), var(--kn-chat-a)) !important;
   border: 1px solid rgba(var(--kn-l-pri-rgb), 0.15) !important;
   box-shadow: 0 2px 12px rgba(var(--kn-l-pri-rgb), 0.06) !important;
@@ -882,11 +881,11 @@ body [class*="user-input-step"] .leading-relaxed {
   overflow: visible !important;
 }
 
-body:not(.theme-light) :is(.surface-composer, [class~="p-px"][class~="bg-card-border"]:not(.agy-user-bubble-frame)) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.surface-composer, [class~="p-px"][class~="bg-card-border"]:not(.agy-user-bubble-frame)) {
   background-image: linear-gradient(135deg, rgba(var(--kn-comp-rim-1-rgb), 0.56) 0%, rgba(var(--kn-comp-rim-2-rgb), 0.38) 46%, rgba(var(--kn-comp-rim-3-rgb), 0.54) 100%) !important;
 }
 
-body.theme-light :is(.surface-composer, [class~="p-px"][class~="bg-card-border"]:not(.agy-user-bubble-frame)) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.surface-composer, [class~="p-px"][class~="bg-card-border"]:not(.agy-user-bubble-frame)) {
   background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.70) 0%, rgba(var(--kn-l-pri-rgb), 0.26) 100%) !important;
 }
 
@@ -898,12 +897,12 @@ body.theme-light :is(.surface-composer, [class~="p-px"][class~="bg-card-border"]
   backdrop-filter: var(--kn-backdrop) !important;
 }
 
-body:not(.theme-light) :is(.surface-composer > .surface-composer-card, [class~="p-px"][class~="bg-card-border"]:not(.agy-user-bubble-frame) > [class~="bg-card"]) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.surface-composer > .surface-composer-card, [class~="p-px"][class~="bg-card-border"]:not(.agy-user-bubble-frame) > [class~="bg-card"]) {
   background-image: linear-gradient(125deg, rgba(var(--kn-comp-bg-1-rgb), var(--kn-comp-a)) 0%, rgba(var(--kn-comp-bg-2-rgb), var(--kn-comp-a)) 52%, rgba(var(--kn-comp-bg-3-rgb), var(--kn-comp-a)) 100%) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
 }
 
-body.theme-light :is(.surface-composer > .surface-composer-card, [class~="p-px"][class~="bg-card-border"]:not(.agy-user-bubble-frame) > [class~="bg-card"]) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.surface-composer > .surface-composer-card, [class~="p-px"][class~="bg-card-border"]:not(.agy-user-bubble-frame) > [class~="bg-card"]) {
   background-image: linear-gradient(180deg, rgba(var(--kn-l-surf-rgb), var(--kn-comp-a)) 0%, rgba(var(--kn-l-over-rgb), var(--kn-comp-a)) 100%) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
 }
@@ -962,7 +961,7 @@ body :is(.agy-user-bubble-frame, [class*="group/user-input-step"] [class*="bg-ca
   pointer-events: none !important;
 }
 
-body.theme-light :is(.agy-user-bubble-frame, [class*="group/user-input-step"] [class*="bg-card-border"], [data-testid="user-input-step"] [class*="bg-card-border"]):has([data-testid="user-message-bubble"])::before {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.agy-user-bubble-frame, [class*="group/user-input-step"] [class*="bg-card-border"], [data-testid="user-input-step"] [class*="bg-card-border"]):has([data-testid="user-message-bubble"])::before {
   border-color: rgba(var(--kn-l-pri-rgb), 0.38) !important;
   box-shadow: 0 3px 10px rgba(var(--kn-l-pri-rgb), 0.16) !important;
 }
@@ -986,13 +985,13 @@ body.theme-light :is(.agy-user-bubble-frame, [class*="group/user-input-step"] [c
   backdrop-filter: var(--kn-backdrop) !important;
 }
 
-body:not(.theme-light) :is(.agy-user-bubble, [data-testid="user-message-bubble"], [class*="group/user-input-step"] [class*="bg-card-border"] > [class~="bg-card"], [data-testid="user-input-step"] [class*="bg-card-border"] > [class~="bg-card"]) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.agy-user-bubble, [data-testid="user-message-bubble"], [class*="group/user-input-step"] [class*="bg-card-border"] > [class~="bg-card"], [data-testid="user-input-step"] [class*="bg-card-border"] > [class~="bg-card"]) {
   background: linear-gradient(135deg, rgba(var(--kn-ub-bg-1-rgb), var(--kn-ub-a)), rgba(var(--kn-ub-bg-2-rgb), var(--kn-ub-a))) !important;
   border: 1px solid rgba(var(--kn-ub-border-rgb), 0.44) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 14px rgba(0, 0, 0, 0.20) !important;
 }
 
-body.theme-light :is(.agy-user-bubble, [data-testid="user-message-bubble"], [class*="group/user-input-step"] [class*="bg-card-border"] > [class~="bg-card"], [data-testid="user-input-step"] [class*="bg-card-border"] > [class~="bg-card"]) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(.agy-user-bubble, [data-testid="user-message-bubble"], [class*="group/user-input-step"] [class*="bg-card-border"] > [class~="bg-card"], [data-testid="user-input-step"] [class*="bg-card-border"] > [class~="bg-card"]) {
   background: linear-gradient(135deg, rgba(var(--kn-l-surf-rgb), var(--kn-ub-a)), rgba(var(--kn-l-over-rgb), var(--kn-ub-a))) !important;
   border: 1px solid rgba(var(--kn-l-pri-rgb), 0.26) !important;
   box-shadow: 0 4px 12px rgba(var(--kn-l-pri-rgb), 0.08) !important;
@@ -1013,11 +1012,11 @@ body.theme-light :is(.agy-user-bubble, [data-testid="user-message-bubble"], [cla
 }
 
 /* Text shadow for subtle text directly over dark wallpaper (excluded from inputs, editors & overlays) */
-body:not(.theme-light) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
 }
 
-body:not(.theme-light) :is(pre, code, input, textarea, [contenteditable="true"], .monaco-editor, .monaco-editor *, .xterm, .xterm *, [role="menu"], [role="menu"] *, [role="listbox"], [role="listbox"] *, [role="dialog"], [role="dialog"] *, [role="alertdialog"], [role="alertdialog"] *, [role="tooltip"], [role="tooltip"] *, [data-mention-menu], [data-mention-menu] *, #typeahead-menu, #typeahead-menu *, .px-menu-content, .px-menu-content *, #kn-studio-host, #kn-studio-host *) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(pre, code, input, textarea, [contenteditable="true"], .monaco-editor, .monaco-editor *, .xterm, .xterm *, [role="menu"], [role="menu"] *, [role="listbox"], [role="listbox"] *, [role="dialog"], [role="dialog"] *, [role="alertdialog"], [role="alertdialog"] *, [role="tooltip"], [role="tooltip"] *, [data-mention-menu], [data-mention-menu] *, #typeahead-menu, #typeahead-menu *, .px-menu-content, .px-menu-content *, #kn-studio-host, #kn-studio-host *) {
   text-shadow: none;
 }
 
@@ -1029,12 +1028,12 @@ body:not(.theme-light) :is(pre, code, input, textarea, [contenteditable="true"],
   overflow: hidden !important;
 }
 
-body:not(.theme-light) :is([class*="code-block"]:not(.code-block), pre:not(:has(> div[class*="rounded-"], > code:only-child)):not(.code-block pre), pre > div[class*="rounded-xl"][class*="bg-muted"], pre > div[class*="rounded-lg"][class*="bg-muted"], .leading-relaxed div[class*="rounded-xl"][class*="bg-muted"], .leading-relaxed div[class*="rounded-lg"][class*="bg-muted"]) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([class*="code-block"]:not(.code-block), pre:not(:has(> div[class*="rounded-"], > code:only-child)):not(.code-block pre), pre > div[class*="rounded-xl"][class*="bg-muted"], pre > div[class*="rounded-lg"][class*="bg-muted"], .leading-relaxed div[class*="rounded-xl"][class*="bg-muted"], .leading-relaxed div[class*="rounded-lg"][class*="bg-muted"]) {
   background-color: rgba(var(--kn-d-surf-rgb), var(--kn-code-a)) !important;
   border: 1px solid rgba(var(--kn-d-aqua-rgb), 0.24) !important;
 }
 
-body.theme-light :is([class*="code-block"]:not(.code-block), pre:not(:has(> div[class*="rounded-"], > code:only-child)):not(.code-block pre), pre > div[class*="rounded-xl"][class*="bg-muted"], pre > div[class*="rounded-lg"][class*="bg-muted"], .leading-relaxed div[class*="rounded-xl"][class*="bg-muted"], .leading-relaxed div[class*="rounded-lg"][class*="bg-muted"]) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([class*="code-block"]:not(.code-block), pre:not(:has(> div[class*="rounded-"], > code:only-child)):not(.code-block pre), pre > div[class*="rounded-xl"][class*="bg-muted"], pre > div[class*="rounded-lg"][class*="bg-muted"], .leading-relaxed div[class*="rounded-xl"][class*="bg-muted"], .leading-relaxed div[class*="rounded-lg"][class*="bg-muted"]) {
   background-color: rgba(var(--kn-l-side-rgb), var(--kn-code-a)) !important;
   border: 1px solid rgba(var(--kn-l-pri-rgb), 0.18) !important;
 }
@@ -1045,23 +1044,23 @@ body pre > code:only-child {
   padding: 12px 14px !important;
 }
 
-body:not(.theme-light) pre > code:only-child {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) pre > code:only-child {
   background-color: rgba(var(--kn-d-surf-rgb), var(--kn-code-a)) !important;
   border: 1px solid rgba(var(--kn-d-blue-rgb), 0.14) !important;
 }
 
-body.theme-light pre > code:only-child {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) pre > code:only-child {
   background-color: rgba(var(--kn-l-side-rgb), var(--kn-code-a)) !important;
   border: 1px solid rgba(var(--kn-l-pri-rgb), 0.16) !important;
 }
 
-body:not(.theme-light) :is(pre > div[class*="rounded-xl"][class*="bg-muted"], .leading-relaxed div[class*="rounded-xl"][class*="bg-muted"]) > div:first-child {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(pre > div[class*="rounded-xl"][class*="bg-muted"], .leading-relaxed div[class*="rounded-xl"][class*="bg-muted"]) > div:first-child {
   background-color: rgba(var(--kn-d-sel-rgb), 0.42) !important;
   border-bottom: 1px solid rgba(var(--kn-d-aqua-rgb), 0.16) !important;
   color: var(--primary) !important;
 }
 
-body.theme-light :is(pre > div[class*="rounded-xl"][class*="bg-muted"], .leading-relaxed div[class*="rounded-xl"][class*="bg-muted"]) > div:first-child {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(pre > div[class*="rounded-xl"][class*="bg-muted"], .leading-relaxed div[class*="rounded-xl"][class*="bg-muted"]) > div:first-child {
   background-color: color-mix(in srgb, var(--kl-white0) 56%, transparent) !important;
   border-bottom: 1px solid rgba(var(--kn-l-pri-rgb), 0.14) !important;
   color: var(--primary) !important;
@@ -1082,7 +1081,7 @@ html body :is([class*="code-block"]:not(.code-block), div[class*="rounded-xl"][c
   padding: 0 !important;
 }
 
-body:not(.theme-light) :not(pre) > code {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :not(pre) > code {
   background-color: rgba(var(--kn-d-sel-rgb), 0.62) !important;
   color: var(--primary) !important;
   border: none !important;
@@ -1090,7 +1089,7 @@ body:not(.theme-light) :not(pre) > code {
   padding: 0.1em 0.38em !important;
 }
 
-body.theme-light :not(pre) > code {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :not(pre) > code {
   background-color: color-mix(in srgb, var(--kl-white0) 65%, transparent) !important;
   color: var(--primary) !important;
   border-radius: 5px !important;
@@ -1100,7 +1099,7 @@ body.theme-light :not(pre) > code {
 /* ============================================================================
    5. Accessibility, Voice/Send Buttons, Popups (/ Typeahead), Scrollbar & Fonts
    ============================================================================ */
-body:not(.theme-light) .leading-relaxed :is(h1, h2, h3) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) .leading-relaxed :is(h1, h2, h3) {
   color: var(--kw-fujiWhite) !important;
 }
 
@@ -1122,45 +1121,45 @@ button,
   outline-offset: 2px !important;
 }
 
-body.theme-light :is(button, a, input, textarea, select, [role="button"], [tabindex]):focus-visible:not(.no-focus-ring) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is(button, a, input, textarea, select, [role="button"], [tabindex]):focus-visible:not(.no-focus-ring) {
   outline: 2px solid rgba(var(--kn-l-pri-rgb), 0.72) !important;
 }
 
-body:not(.theme-light) ::selection {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) ::selection {
   background: rgba(var(--kn-d-sel-rgb), 0.85);
   color: var(--kw-fujiWhite);
 }
 
-body.theme-light ::selection {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) ::selection {
   background: rgba(var(--kn-l-pri-rgb), 0.24);
   color: var(--kl-ink1);
 }
 
 /* Fix .text-background contrast & voice/send controls (Dark + Light, unlayered) */
-body:not(.theme-light) .text-background,
-body:not(.theme-light) [data-testid="voice-live-pill"]:not([class*="bg-red"]),
-body:not(.theme-light) [data-testid="voice-live-pill"]:not([class*="bg-red"]) button,
-body:not(.theme-light) [data-testid="voice-live-pill"]:not([class*="bg-red"]) svg,
-body:not(.theme-light) [data-testid="voice-start-button"],
-body:not(.theme-light) [data-testid="voice-start-button"] svg {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) .text-background,
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-live-pill"]:not([class*="bg-red"]),
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-live-pill"]:not([class*="bg-red"]) button,
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-live-pill"]:not([class*="bg-red"]) svg,
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-start-button"],
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-start-button"] svg {
   color: var(--primary-foreground) !important;
 }
 
-body.theme-light .text-background,
-body.theme-light [data-testid="voice-live-pill"]:not([class*="bg-red"]),
-body.theme-light [data-testid="voice-live-pill"]:not([class*="bg-red"]) button,
-body.theme-light [data-testid="voice-live-pill"]:not([class*="bg-red"]) svg,
-body.theme-light [data-testid="voice-start-button"],
-body.theme-light [data-testid="voice-start-button"] svg {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) .text-background,
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-live-pill"]:not([class*="bg-red"]),
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-live-pill"]:not([class*="bg-red"]) button,
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-live-pill"]:not([class*="bg-red"]) svg,
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-start-button"],
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-start-button"] svg {
   color: var(--primary-foreground) !important;
 }
 
-body:not(.theme-light) [data-testid="voice-live-pill"]:not([class*="bg-red"]) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-live-pill"]:not([class*="bg-red"]) {
   background-color: var(--primary) !important;
   box-shadow: 0 2px 10px rgba(var(--kn-d-pri-rgb), 0.28) !important;
 }
 
-body.theme-light [data-testid="voice-live-pill"]:not([class*="bg-red"]) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) [data-testid="voice-live-pill"]:not([class*="bg-red"]) {
   background-color: var(--primary) !important;
   box-shadow: 0 2px 10px rgba(var(--kn-l-pri-rgb), 0.22) !important;
 }
@@ -1172,13 +1171,13 @@ body button[data-tooltip-id*="input-send-button"]:not([data-tooltip-id*="record"
   border-radius: 9999px !important;
 }
 
-body:not(.theme-light) button[data-testid="send-button"]:not(:disabled),
-body:not(.theme-light) button[data-tooltip-id*="input-send-button"]:not([data-tooltip-id*="record"]):not([data-tooltip-id*="cancel"]):not(:disabled) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) button[data-testid="send-button"]:not(:disabled),
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) button[data-tooltip-id*="input-send-button"]:not([data-tooltip-id*="record"]):not([data-tooltip-id*="cancel"]):not(:disabled) {
   box-shadow: 0 2px 10px rgba(var(--kn-d-pri-rgb), 0.28) !important;
 }
 
-body.theme-light button[data-testid="send-button"]:not(:disabled),
-body.theme-light button[data-tooltip-id*="input-send-button"]:not([data-tooltip-id*="record"]):not([data-tooltip-id*="cancel"]):not(:disabled) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) button[data-testid="send-button"]:not(:disabled),
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) button[data-tooltip-id*="input-send-button"]:not([data-tooltip-id*="record"]):not([data-tooltip-id*="cancel"]):not(:disabled) {
   box-shadow: 0 2px 10px rgba(var(--kn-l-pri-rgb), 0.22) !important;
 }
 
@@ -1211,10 +1210,10 @@ html body [class*="typeahead"]:not(:empty),
 html body [data-floating-ui-portal],
 html body [data-radix-portal],
 html body [data-radix-popper-content-wrapper],
-html body [role="listbox"]:not(:empty),
+html body [role="listbox"]:not(:empty):not(:where(.lightBulbWidget, .monaco-editor [role="listbox"])),
 html body [role="menu"]:not(:empty),
 html body [role="combobox"][aria-expanded="true"],
-html body [role="dialog"],
+html body [role="dialog"]:not(:where(.find-widget, .monaco-editor [role="dialog"])),
 html body [role="alertdialog"],
 html body .px-menu-content:not(:empty),
 html body div[class*="z-[6000]"],
@@ -1223,26 +1222,26 @@ html body > div[class*="z-50"]:has([role="listbox"], [role="menu"], [role="dialo
   z-index: 2147483640 !important;
 }
 
-html body [role="tooltip"],
+html body [role="tooltip"]:not(:where(.monaco-editor [role="tooltip"])),
 html body [data-radix-tooltip-content] {
   z-index: 2147483641 !important;
 }
 
 /* Crisp readable surface for Slash / @ mention menus, dropdowns, dialogs & tooltips (overlay opacity clamped >= 0.45) */
-body :is([data-mention-menu]:not(:empty), #typeahead-menu:not(:empty), [id*="typeahead"]:not(:empty):not([id*="typeahead-item"]), [role="menu"]:not(:empty), [role="listbox"]:not(:empty), .px-menu-content:not(:empty), [data-radix-menu-content]:not(:empty), [data-floating-ui-portal] > div:not(:empty), div.border-menu-border:not(:empty), .monaco-menu-container, [role="dialog"], [role="alertdialog"], [role="tooltip"]:not(:empty), .agy-overlay, .surface-glass) {
+body :is([data-mention-menu]:not(:empty), #typeahead-menu:not(:empty), [id*="typeahead"]:not(:empty):not([id*="typeahead-item"]), [role="menu"]:not(:empty), [role="listbox"]:not(:empty):not(:where(.lightBulbWidget, .monaco-editor [role="listbox"])), .px-menu-content:not(:empty), [data-radix-menu-content]:not(:empty), [data-floating-ui-portal] > div:not(:empty), div.border-menu-border:not(:empty), .monaco-menu-container, [role="dialog"]:not(:where(.find-widget, .monaco-editor [role="dialog"])), [role="alertdialog"], [role="tooltip"]:not(:empty):not(:where(.monaco-editor [role="tooltip"])), .agy-overlay, .surface-glass) {
   border-radius: var(--kn-card-radius) !important;
   -webkit-backdrop-filter: var(--kn-backdrop) !important;
   backdrop-filter: var(--kn-backdrop) !important;
 }
 
-body:not(.theme-light) :is([data-mention-menu]:not(:empty), #typeahead-menu:not(:empty), [id*="typeahead"]:not(:empty):not([id*="typeahead-item"]), [role="menu"]:not(:empty), [role="listbox"]:not(:empty), .px-menu-content:not(:empty), [data-radix-menu-content]:not(:empty), [data-floating-ui-portal] > div:not(:empty), div.border-menu-border:not(:empty), .monaco-menu-container, [role="dialog"], [role="alertdialog"], [role="tooltip"]:not(:empty), .agy-overlay, .surface-glass) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-mention-menu]:not(:empty), #typeahead-menu:not(:empty), [id*="typeahead"]:not(:empty):not([id*="typeahead-item"]), [role="menu"]:not(:empty), [role="listbox"]:not(:empty):not(:where(.lightBulbWidget, .monaco-editor [role="listbox"])), .px-menu-content:not(:empty), [data-radix-menu-content]:not(:empty), [data-floating-ui-portal] > div:not(:empty), div.border-menu-border:not(:empty), .monaco-menu-container, [role="dialog"]:not(:where(.find-widget, .monaco-editor [role="dialog"])), [role="alertdialog"], [role="tooltip"]:not(:empty):not(:where(.monaco-editor [role="tooltip"])), .agy-overlay, .surface-glass) {
   background-color: rgba(var(--kn-d-over-rgb), clamp(0.45, var(--kn-overlay-a, 0.96), 1)) !important;
   color: var(--foreground) !important;
   border: 1px solid rgba(var(--kn-d-blue-rgb), 0.22) !important;
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.52) !important;
 }
 
-body.theme-light :is([data-mention-menu]:not(:empty), #typeahead-menu:not(:empty), [id*="typeahead"]:not(:empty):not([id*="typeahead-item"]), [role="menu"]:not(:empty), [role="listbox"]:not(:empty), .px-menu-content:not(:empty), [data-radix-menu-content]:not(:empty), [data-floating-ui-portal] > div:not(:empty), div.border-menu-border:not(:empty), .monaco-menu-container, [role="dialog"], [role="alertdialog"], [role="tooltip"]:not(:empty), .agy-overlay, .surface-glass) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-mention-menu]:not(:empty), #typeahead-menu:not(:empty), [id*="typeahead"]:not(:empty):not([id*="typeahead-item"]), [role="menu"]:not(:empty), [role="listbox"]:not(:empty):not(:where(.lightBulbWidget, .monaco-editor [role="listbox"])), .px-menu-content:not(:empty), [data-radix-menu-content]:not(:empty), [data-floating-ui-portal] > div:not(:empty), div.border-menu-border:not(:empty), .monaco-menu-container, [role="dialog"]:not(:where(.find-widget, .monaco-editor [role="dialog"])), [role="alertdialog"], [role="tooltip"]:not(:empty):not(:where(.monaco-editor [role="tooltip"])), .agy-overlay, .surface-glass) {
   background-color: rgba(var(--kn-l-over-rgb), clamp(0.45, var(--kn-overlay-a, 0.96), 1)) !important;
   color: var(--kl-ink1) !important;
   border: 1px solid rgba(var(--kn-l-pri-rgb), 0.24) !important;
@@ -1250,24 +1249,24 @@ body.theme-light :is([data-mention-menu]:not(:empty), #typeahead-menu:not(:empty
 }
 
 /* Slash / @ mention & menu items — direct ARIA/ID selectors + pixelTheme.js tags (Dark + Light) */
-body:not(.theme-light) :is([data-mention-menu], #typeahead-menu, [role="listbox"], [role="menu"], .px-menu-content) :is([role="option"], [role="menuitem"], [id*="typeahead-item"], .px-menu-item, .px-listbox-item) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-mention-menu], #typeahead-menu, [role="listbox"], [role="menu"], .px-menu-content) :is([role="option"], [role="menuitem"], [id*="typeahead-item"], .px-menu-item, .px-listbox-item) {
   color: var(--foreground) !important;
   border-radius: 7px !important;
   transition: background-color 120ms ease, color 120ms ease !important;
 }
 
-body.theme-light :is([data-mention-menu], #typeahead-menu, [role="listbox"], [role="menu"], .px-menu-content) :is([role="option"], [role="menuitem"], [id*="typeahead-item"], .px-menu-item, .px-listbox-item) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-mention-menu], #typeahead-menu, [role="listbox"], [role="menu"], .px-menu-content) :is([role="option"], [role="menuitem"], [id*="typeahead-item"], .px-menu-item, .px-listbox-item) {
   color: var(--kl-ink1) !important;
   border-radius: 7px !important;
   transition: background-color 120ms ease, color 120ms ease !important;
 }
 
-body:not(.theme-light) :is([data-mention-menu], #typeahead-menu, [role="listbox"], [role="menu"], .px-menu-content) :is([role="option"], [role="menuitem"], [id*="typeahead-item"], .px-menu-item, .px-listbox-item):is(:hover, [aria-selected="true"], [data-selected="true"], [data-highlighted], [data-active="true"]) {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-mention-menu], #typeahead-menu, [role="listbox"], [role="menu"], .px-menu-content) :is([role="option"], [role="menuitem"], [id*="typeahead-item"], .px-menu-item, .px-listbox-item):is(:hover, [aria-selected="true"], [data-selected="true"], [data-highlighted], [data-active="true"]) {
   background-color: rgba(var(--kn-d-sel-rgb), 0.86) !important;
   color: var(--foreground) !important;
 }
 
-body.theme-light :is([data-mention-menu], #typeahead-menu, [role="listbox"], [role="menu"], .px-menu-content) :is([role="option"], [role="menuitem"], [id*="typeahead-item"], .px-menu-item, .px-listbox-item):is(:hover, [aria-selected="true"], [data-selected="true"], [data-highlighted], [data-active="true"]) {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) :is([data-mention-menu], #typeahead-menu, [role="listbox"], [role="menu"], .px-menu-content) :is([role="option"], [role="menuitem"], [id*="typeahead-item"], .px-menu-item, .px-listbox-item):is(:hover, [aria-selected="true"], [data-selected="true"], [data-highlighted], [data-active="true"]) {
   background-color: color-mix(in srgb, var(--kl-white0) 92%, transparent) !important;
   color: var(--kl-ink1) !important;
 }
@@ -1288,21 +1287,21 @@ body :is([data-mention-menu], #typeahead-menu, [role="listbox"], [role="menu"], 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
-body:not(.theme-light) ::-webkit-scrollbar-thumb {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) ::-webkit-scrollbar-thumb {
   background: rgba(var(--kn-d-aqua-rgb), 0.35);
   border-radius: 9999px;
 }
 
-body:not(.theme-light) ::-webkit-scrollbar-thumb:hover {
+body:not(.theme-light):where(:not(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) ::-webkit-scrollbar-thumb:hover {
   background: rgba(var(--kn-d-pri-rgb), 0.55);
 }
 
-body.theme-light ::-webkit-scrollbar-thumb {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) ::-webkit-scrollbar-thumb {
   background: rgba(var(--kn-l-pri-rgb), 0.28);
   border-radius: 9999px;
 }
 
-body.theme-light ::-webkit-scrollbar-thumb:hover {
+:is(body.theme-light, body:where(:has(> .monaco-workbench:is(.vs:not(.vs-dark), .hc-light)))) ::-webkit-scrollbar-thumb:hover {
   background: rgba(var(--kn-l-pri-rgb), 0.48);
 }
 
@@ -1314,7 +1313,7 @@ body :is(
   [data-testid="user-message-bubble"] *,
   .agy-user-bubble,
   .agy-user-bubble *,
-  .leading-relaxed:not(:where([role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="tooltip"] *, [data-mention-menu] *, .surface-composer *, [id="kn-studio-host"] *))
+  .leading-relaxed:not(:where([role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="tooltip"] *, [data-mention-menu] *, .surface-composer *, .gettingStartedContainer *, .extension-editor *, .settings-editor *, .monaco-hover *, .notification-list-item *, .antigravity-welcome-container *, [id="kn-studio-host"] *))
 ) {
   line-height: var(--kn-line-height) !important;
 }
@@ -1331,6 +1330,7 @@ html[data-kn-ui-font="1"] body :not(:where(
   .monaco-editor, .monaco-editor *,
   .xterm, .xterm *,
   [class*="material-symbols"], [class*="codicon"], [data-icon],
+  .predefined-file-icon, .element-decoration.bubble, .outline-element-decoration.bubble, [class*="theme-icon"],
   [id="kn-studio-host"], [id="kn-studio-host"] *
 )) {
   font-family: var(--kn-ui-font) !important;
@@ -1342,9 +1342,14 @@ html[data-kn-mono-font="1"] body {
 }
 
 html[data-kn-mono-font="1"] body :is(
-  pre, pre *, code, code *, kbd, samp,
-  .font-mono, .font-mono *,
-  .monaco-editor, .monaco-editor .view-lines, .monaco-editor .view-line,
+  pre,
+  pre :not(:where(button, button *, [role="button"], [role="button"] *, [class*="material-symbols"], [class*="codicon"], [data-icon], div[class*="rounded-xl"] > div:first-child, div[class*="rounded-xl"] > div:first-child *, div[class*="rounded-lg"] > div:first-child, div[class*="rounded-lg"] > div:first-child *)),
+  code,
+  code :not(:where([class*="material-symbols"], [class*="codicon"], [data-icon], button, button *, [role="button"], [role="button"] *)),
+  kbd, samp,
+  .font-mono,
+  .font-mono :not(:where([class*="material-symbols"], [class*="codicon"], [data-icon])),
+  .monaco-editor .view-lines, .monaco-editor .view-line, .monaco-editor .view-line *,
   .xterm, .xterm-rows
 ) {
   --font-mono: var(--kn-mono-font) !important;
@@ -1358,14 +1363,17 @@ html[data-kn-chat-size="1"] body :is(
   [data-testid="user-message-bubble"] *,
   .agy-user-bubble,
   .agy-user-bubble *,
-  .leading-relaxed:not(:where([role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="tooltip"] *, [data-mention-menu] *, .surface-composer *, [id="kn-studio-host"] *))
+  .leading-relaxed:not(:where([role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="tooltip"] *, [data-mention-menu] *, .surface-composer *, .gettingStartedContainer *, .extension-editor *, .settings-editor *, .monaco-hover *, .notification-list-item *, .antigravity-welcome-container *, [id="kn-studio-host"] *))
 ) {
   font-size: var(--kn-chat-font-size) !important;
 }
 
 html[data-kn-code-size="1"] body :is(
-  pre, pre *, code, kbd, samp,
-  .monaco-editor .view-lines, .monaco-editor .view-line,
+  pre :not(:where(button, button *, [role="button"], [role="button"] *, [class*="material-symbols"], [class*="codicon"], [data-icon], div[class*="rounded-xl"] > div:first-child, div[class*="rounded-xl"] > div:first-child *, div[class*="rounded-lg"] > div:first-child, div[class*="rounded-lg"] > div:first-child *)),
+  code,
+  code :not(:where([class*="material-symbols"], [class*="codicon"], [data-icon], button, button *, [role="button"], [role="button"] *)),
+  kbd, samp,
+  .monaco-editor .view-lines, .monaco-editor .view-line, .monaco-editor .view-line *,
   .xterm-rows
 ) {
   font-size: var(--kn-code-font-size) !important;
@@ -1373,12 +1381,12 @@ html[data-kn-code-size="1"] body :is(
 
 /* ---- VS Code / Antigravity IDE Workbench Integration ---- */
 html:has(.monaco-workbench) {
-  background-color: #0b0f17 !important;
+  background-color: rgb(var(--kn-d-chrome-rgb, 23, 20, 33)) !important;
 }
 
 html:has(.monaco-workbench.vs:not(.vs-dark)),
 html:has(.monaco-workbench.hc-light) {
-  background-color: rgb(var(--kn-l-chrome-rgb)) !important;
+  background-color: rgb(var(--kn-l-chrome-rgb, 235, 229, 194)) !important;
 }
 
 html body:has(> .monaco-workbench) {
@@ -1412,45 +1420,77 @@ html body .monaco-workbench :is(.monaco-grid-view, .monaco-grid-branch-node, .mo
   background-color: transparent !important;
 }
 
+/* Keep backdrop-filter off .part.titlebar & .part.statusbar so position:fixed menubar dropdowns & statusbar beaks are never trapped */
 html body .monaco-workbench .part.titlebar {
   background-color: rgba(var(--kn-d-chrome-rgb), var(--kn-titlebar-a)) !important;
-  backdrop-filter: var(--kn-backdrop) !important;
-  -webkit-backdrop-filter: var(--kn-backdrop) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.titlebar {
   background-color: rgba(var(--kn-l-chrome-rgb), var(--kn-titlebar-a)) !important;
 }
 
-html body .monaco-workbench :is(.part.activitybar, .part.sidebar, .part.statusbar) {
+html body .monaco-workbench :is(.part.activitybar, .part.sidebar) {
   background-color: rgba(var(--kn-d-side-rgb), var(--kn-sidebar-a)) !important;
-  backdrop-filter: var(--kn-backdrop) !important;
   -webkit-backdrop-filter: var(--kn-backdrop) !important;
+  backdrop-filter: var(--kn-backdrop) !important;
+}
+
+html body .monaco-workbench .part.statusbar {
+  background-color: rgba(var(--kn-d-side-rgb), var(--kn-sidebar-a)) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) :is(.part.activitybar, .part.sidebar, .part.statusbar) {
   background-color: rgba(var(--kn-l-side-rgb), var(--kn-sidebar-a)) !important;
 }
 
-html body .monaco-workbench :is(.part.sidebar, .part.activitybar) :is(.monaco-list, .monaco-list-rows, .pane-body, .composite.title) {
+html body .monaco-workbench :is(.part > .title, .part > .composite.title, .monaco-pane-view .pane > .pane-header) {
   background-color: transparent !important;
+}
+
+html body .monaco-workbench :is(.part.sidebar, .part.activitybar) :is(.monaco-list, .monaco-list-rows, .pane-body, .composite.title, > .title) {
+  background-color: transparent !important;
+}
+
+html body .monaco-workbench .part.sidebar .monaco-tree-sticky-container {
+  background-color: rgba(var(--kn-d-side-rgb), 0.90) !important;
+}
+
+html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.sidebar .monaco-tree-sticky-container {
+  background-color: rgba(var(--kn-l-side-rgb), 0.92) !important;
 }
 
 html body .monaco-workbench .part.editor > .content,
 html body .monaco-workbench .part.editor > .content .editor-group-container > .editor-container,
 html body .monaco-workbench .part.editor > .content .editor-group-container > .title,
 html body .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container,
+html body .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab,
+html body .monaco-workbench .part.editor > .content .gettingStartedContainer,
+html body .monaco-workbench .part.editor > .content .editor-group-container > .antigravity-welcome-container,
 html body .monaco-workbench .part.panel > .composite.title,
+html body .monaco-workbench .part.panel > .title,
 html body .monaco-workbench .part.panel > .content {
+  background: transparent !important;
   background-color: transparent !important;
+}
+
+html body .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:is(.active, .selected) {
+  background-color: rgba(var(--kn-d-sel-rgb), 0.44) !important;
+}
+
+html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.editor > .content .editor-group-container > .title .tabs-container > .tab:is(.active, .selected) {
+  background-color: rgba(var(--kn-l-pri-rgb), 0.14) !important;
 }
 
 html body .monaco-workbench .part.editor > .content .editor-group-container,
 html body .monaco-workbench .part.editor > .content .editor-group-container.empty,
 html body .monaco-workbench .part.panel {
   background-color: rgba(var(--kn-d-surf-rgb), var(--kn-editor-a)) !important;
-  backdrop-filter: var(--kn-backdrop) !important;
   -webkit-backdrop-filter: var(--kn-backdrop) !important;
+  backdrop-filter: var(--kn-backdrop) !important;
 }
 
 html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.editor > .content .editor-group-container,
@@ -1461,8 +1501,8 @@ html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.panel {
 
 html body .monaco-workbench .part.auxiliarybar {
   background-color: rgba(var(--kn-d-surf-rgb), var(--kn-panel-a)) !important;
-  backdrop-filter: var(--kn-backdrop) !important;
   -webkit-backdrop-filter: var(--kn-backdrop) !important;
+  backdrop-filter: var(--kn-backdrop) !important;
 }
 
 html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.auxiliarybar {
@@ -1470,23 +1510,54 @@ html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) .part.auxiliarybar 
 }
 
 html body .monaco-workbench .part.auxiliarybar > .content,
-html body .monaco-workbench .part.auxiliarybar > .composite.title {
+html body .monaco-workbench .part.auxiliarybar > .composite.title,
+html body .monaco-workbench .part.auxiliarybar > .title,
+html body .monaco-workbench .antigravity-agent-side-panel,
+html body .monaco-workbench .antigravity-agent-manager,
+html body .monaco-workbench .jetski-custom-editor-pane {
   background-color: transparent !important;
 }
 
-html body .monaco-workbench :is(.monaco-editor, .monaco-editor-background, .monaco-editor .margin, .xterm, .xterm-viewport) {
+html body .monaco-workbench :is(.monaco-editor, .monaco-editor-background, .monaco-editor .margin, .pane-body.integrated-terminal .terminal-outer-container, .terminal-sticky-scroll, .xterm, .xterm-viewport) {
+  background: transparent !important;
   background-color: transparent !important;
 }
 
-html body .monaco-workbench :is(.quick-input-widget, .monaco-menu-container, .context-view .monaco-scrollable-element) {
-  background-color: rgba(var(--kn-d-over-rgb), var(--kn-overlay-a)) !important;
-  backdrop-filter: var(--kn-backdrop) !important;
+html body .monaco-workbench :is(
+  .quick-input-widget,
+  .monaco-menu-container,
+  .monaco-hover.workbench-hover,
+  .monaco-editor .suggest-widget,
+  .workbench-suggest-widget,
+  .monaco-editor .suggest-details,
+  .action-widget,
+  .monaco-dialog-box,
+  .notifications-center,
+  .notifications-list-container:not(.notification-toast *),
+  .notifications-toasts .notification-toast,
+  .monaco-editor .find-widget
+) {
+  background-color: rgba(var(--kn-d-over-rgb), clamp(0.45, var(--kn-overlay-a, 0.96), 1)) !important;
   -webkit-backdrop-filter: var(--kn-backdrop) !important;
+  backdrop-filter: var(--kn-backdrop) !important;
   border-radius: var(--kn-card-radius) !important;
 }
 
-html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) :is(.quick-input-widget, .monaco-menu-container, .context-view .monaco-scrollable-element) {
-  background-color: rgba(var(--kn-l-over-rgb), var(--kn-overlay-a)) !important;
+html body .monaco-workbench:is(.vs:not(.vs-dark), .hc-light) :is(
+  .quick-input-widget,
+  .monaco-menu-container,
+  .monaco-hover.workbench-hover,
+  .monaco-editor .suggest-widget,
+  .workbench-suggest-widget,
+  .monaco-editor .suggest-details,
+  .action-widget,
+  .monaco-dialog-box,
+  .notifications-center,
+  .notifications-list-container:not(.notification-toast *),
+  .notifications-toasts .notification-toast,
+  .monaco-editor .find-widget
+) {
+  background-color: rgba(var(--kn-l-over-rgb), clamp(0.45, var(--kn-overlay-a, 0.96), 1)) !important;
 }
 
 /* === KANAGAWA-CUSTOM-SURFACE-START === */

@@ -39,8 +39,9 @@ if (!globalThis.__knIdeHookInstalled) {
     if (fs.existsSync(activeFile)) {
       try {
         const data = JSON.parse(fs.readFileSync(activeFile, "utf-8"));
-        if (data && data.theme && fs.existsSync(path.join(resources, data.theme))) {
-          return path.join(resources, data.theme);
+        const name = data && typeof data.theme === "string" ? data.theme.trim() : "";
+        if (name && /^[a-zA-Z0-9_-]+$/.test(name) && fs.existsSync(path.join(resources, name))) {
+          return path.join(resources, name);
         }
       } catch (_) {}
     }
@@ -56,7 +57,10 @@ if (!globalThis.__knIdeHookInstalled) {
       const p = path.join(themeDir, f);
       if (fs.existsSync(p)) return p;
     }
-    const anyCss = fs.readdirSync(themeDir).find((f) => f.toLowerCase().endsWith(".css") && f.toLowerCase() !== "custom.css");
+    const anyCss = fs.readdirSync(themeDir).find((f) => {
+      const lower = f.toLowerCase();
+      return lower.endsWith(".css") && lower !== "custom.css" && lower !== "glass-user.css";
+    });
     return anyCss ? path.join(themeDir, anyCss) : null;
   }
 
@@ -183,6 +187,17 @@ if (!globalThis.__knIdeHookInstalled) {
     suppressWatchUntil = Math.max(suppressWatchUntil, Date.now() + ms);
   }
 
+  function writeIdeLiveWatchMarker(themeDir) {
+    try {
+      const markerPath = path.join(themeDir, ".ide-live-watch.json");
+      fs.writeFileSync(
+        markerPath,
+        JSON.stringify({ pid: process.pid, version: 2, app: "ide", updatedAt: new Date().toISOString() }, null, 2),
+        "utf-8"
+      );
+    } catch (_) {}
+  }
+
   function readCurrentThemeConfig(themeDir, builder) {
     const configPath = path.join(themeDir, "kanagawa.config.json");
     let raw = {};
@@ -218,8 +233,8 @@ if (!globalThis.__knIdeHookInstalled) {
   function buildStudioState(themeDir, builder, extraThumbs) {
     builder.ensureCustomCssFile(themeDir);
     if (builder.listLibraryAssets(themeDir).length === 0) {
-      const cssPath = path.join(themeDir, "kanagawa.css");
-      if (fs.existsSync(cssPath)) {
+      const cssPath = findThemeCssFile(themeDir);
+      if (cssPath && fs.existsSync(cssPath)) {
         try { builder.seedLibraryFromCss(themeDir, fs.readFileSync(cssPath, "utf-8")); } catch (_) {}
       }
     }
@@ -252,6 +267,7 @@ if (!globalThis.__knIdeHookInstalled) {
     const tasks = [];
     for (const entry of activeIdeWindows.values()) {
       if (!entry || entry.win.isDestroyed() || entry.wc.isDestroyed()) continue;
+      if (!isWorkbenchUrl(entry.wc.getURL())) continue;
       tasks.push(Promise.resolve(entry.applyCss(css)).catch(() => {}));
     }
     if (tasks.length > 0) await Promise.all(tasks);
@@ -286,6 +302,7 @@ if (!globalThis.__knIdeHookInstalled) {
 
   function ensureThemeDirWatch(themeDir) {
     if (!themeDir || !fs.existsSync(themeDir)) return;
+    writeIdeLiveWatchMarker(themeDir);
     if (watchedThemeDir === themeDir && themeDirWatcher) return;
     if (themeDirWatcher) {
       try { themeDirWatcher.close(); } catch (_) {}
@@ -301,7 +318,7 @@ if (!globalThis.__knIdeHookInstalled) {
         const norm = String(filename || "").replace(/\\/g, "/").toLowerCase();
         if (!norm) return;
         const base = path.posix.basename(norm);
-        if (!base || base === ".live-watch.json" || base === "repo-link.json" || base.endsWith(".tmp") || base.endsWith(".bak")) return;
+        if (!base || base === ".live-watch.json" || base === ".ide-live-watch.json" || base === "repo-link.json" || base.endsWith(".tmp") || base.endsWith(".bak")) return;
         if (norm === "studio.js") studioChanged = true;
         else if (norm === "custom.css") { cssChanged = true; stateChanged = true; }
         else if (norm.endsWith(".css")) cssChanged = true;
@@ -323,6 +340,7 @@ if (!globalThis.__knIdeHookInstalled) {
             try {
               const builder = getThemeBuilder(themeDir);
               if (builder) {
+                markInternalWrite(600);
                 const stateData = buildStudioState(themeDir, builder);
                 broadcastStudioState(null, stateData, true);
               }
@@ -351,7 +369,7 @@ if (!globalThis.__knIdeHookInstalled) {
   }
 
   function isWorkbenchUrl(url) {
-    return /^vscode-file:\/\/.*workbench\.html/i.test(String(url || ""));
+    return /^vscode-file:\/\/.*\/workbench(?:-[a-z0-9-]+)?\.html(?:$|[?#])/i.test(String(url || ""));
   }
 
   async function handleStudioMessage(win, wc, rawMsg) {
@@ -395,7 +413,10 @@ if (!globalThis.__knIdeHookInstalled) {
 
       if (action === "apply-config") {
         markInternalWrite();
-        const res = builder.applyThemeConfig(themeDir, parsed.config || readCurrentThemeConfig(themeDir, builder));
+        const nextCfg = (parsed.config && typeof parsed.config === "object" && !Array.isArray(parsed.config))
+          ? parsed.config
+          : readCurrentThemeConfig(themeDir, builder);
+        const res = builder.applyThemeConfig(themeDir, nextCfg);
         await broadcastThemeCssRefresh();
         mirrorToRepo(themeDir, ["kanagawa.config.json", "kanagawa.css", "loading.html", "custom.css"]);
         markInternalWrite();
@@ -412,7 +433,9 @@ if (!globalThis.__knIdeHookInstalled) {
 
       if (action === "apply-preset-colors") {
         markInternalWrite();
-        const baseCfg = parsed.config || readCurrentThemeConfig(themeDir, builder);
+        const baseCfg = (parsed.config && typeof parsed.config === "object" && !Array.isArray(parsed.config))
+          ? parsed.config
+          : readCurrentThemeConfig(themeDir, builder);
         const nextCfg = builder.applyPresetToConfig(baseCfg, parsed.presetId);
         const res = builder.applyThemeConfig(themeDir, nextCfg);
         await broadcastThemeCssRefresh();
@@ -631,7 +654,10 @@ if (!globalThis.__knIdeHookInstalled) {
 
       if (action === "save-profile") {
         markInternalWrite();
-        const baseCfg = builder.mergeConfig(parsed.config || readCurrentThemeConfig(themeDir, builder));
+        const rawCfg = (parsed.config && typeof parsed.config === "object" && !Array.isArray(parsed.config))
+          ? parsed.config
+          : readCurrentThemeConfig(themeDir, builder);
+        const baseCfg = builder.mergeConfig(rawCfg);
         const saveOpts = {
           id: parsed.profileId,
           description: parsed.description,

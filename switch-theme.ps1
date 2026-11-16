@@ -63,7 +63,7 @@ if (Test-Path -LiteralPath $LocalSrc) {
     Get-ChildItem -LiteralPath $LocalSrc -File -Recurse -Force | ForEach-Object {
         $rel = $_.FullName.Substring($srcPrefix.Length).TrimStart('\', '/')
         $relNorm = $rel.Replace('\', '/')
-        if ($relNorm -in @('.live-watch.json', 'repo-link.json')) { return }
+        if ($relNorm -in @('.live-watch.json', '.ide-live-watch.json', 'repo-link.json')) { return }
         $dstFile = Join-Path $TargetDst $rel
         $dstParent = Split-Path $dstFile -Parent
         if (-not (Test-Path -LiteralPath $dstParent)) {
@@ -89,15 +89,36 @@ $ActiveConfig = @{ theme = $ThemeName } | ConvertTo-Json
 $ActiveConfigPath = Join-Path $Resources 'active-theme.json'
 [System.IO.File]::WriteAllText($ActiveConfigPath, $ActiveConfig, (New-Object System.Text.UTF8Encoding($false)))
 
-$LiveWatchActive = $false
-$LiveWatchFile = Join-Path $TargetDst '.live-watch.json'
-if (-not $ForceReload -and (Test-Path $LiveWatchFile)) {
+$IdeOutDir = Join-Path $env:LOCALAPPDATA 'Programs\Antigravity IDE\resources\app\out'
+$IdeHookSrc = Join-Path $PSScriptRoot 'patch\ideTheme.mjs'
+$IdeHookDst = Join-Path $IdeOutDir 'kanagawa-ide-hook.mjs'
+$IdeHookUpdated = $false
+if ((Test-Path -LiteralPath $IdeHookDst) -and (Test-Path -LiteralPath $IdeHookSrc)) {
     try {
-        $lw = Get-Content $LiveWatchFile -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ((Get-FileHash $IdeHookDst).Hash -ne (Get-FileHash $IdeHookSrc).Hash) {
+            Copy-Item -LiteralPath $IdeHookSrc -Destination $IdeHookDst -Force
+            $IdeHookUpdated = $true
+            Write-Host "[kanagawa] Updated Antigravity IDE hook (kanagawa-ide-hook.mjs)." -ForegroundColor Cyan
+        }
+    } catch {}
+}
+
+$LiveWatchActive = $false
+$AgentLiveWatch = $false
+$IdeLiveWatch = $false
+foreach ($markerSpec in @(
+    @{ File = (Join-Path $TargetDst '.live-watch.json'); Kind = 'agent' },
+    @{ File = (Join-Path $TargetDst '.ide-live-watch.json'); Kind = 'ide' }
+)) {
+    if ($ForceReload -or -not (Test-Path $markerSpec.File)) { continue }
+    try {
+        $lw = Get-Content $markerSpec.File -Raw -Encoding UTF8 | ConvertFrom-Json
         if ($lw -and $lw.pid) {
             $p = Get-Process -Id ([int]$lw.pid) -ErrorAction SilentlyContinue
             if ($p -and ($p.ProcessName -like '*Antigravity*')) {
                 $LiveWatchActive = $true
+                if ($markerSpec.Kind -eq 'ide') { $IdeLiveWatch = $true }
+                else { $AgentLiveWatch = $true }
             }
         }
     } catch {}
@@ -110,8 +131,14 @@ if ($LiveWatchActive) {
             try { (Get-Item $CfgDst).LastWriteTimeUtc = [DateTime]::UtcNow } catch {}
         }
     }
+    if ($IdeHookUpdated -and $IdeLiveWatch) {
+        Write-Host "[kanagawa] Reminder: restart Antigravity IDE to load the updated main-process IDE hook." -ForegroundColor Yellow
+    }
     Write-Host "[kanagawa] Synced! Live hot-watch applied CSS without reloading Antigravity. / Da dong bo va cap nhat giao dien tuc thi (khong can reload)!" -ForegroundColor Green
     exit 0
+}
+if ($IdeHookUpdated) {
+    Write-Host "[kanagawa] Reminder: restart Antigravity IDE if running to load the updated main-process IDE hook." -ForegroundColor Yellow
 }
 
 $PortFile = Join-Path $env:APPDATA 'Antigravity\DevToolsActivePort'

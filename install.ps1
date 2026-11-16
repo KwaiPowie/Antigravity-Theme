@@ -25,6 +25,9 @@ $Injector  = Join-Path $PSScriptRoot 'patch\pixelTheme.js'
 $ThemeSrc  = Join-Path $PSScriptRoot $ThemeName
 $Work      = Join-Path $env:TEMP ('kanagawa-theme-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
 $NewAsar   = "$Asar.pixel-new"
+$IdeOutDir = Join-Path $env:LOCALAPPDATA 'Programs\Antigravity IDE\resources\app\out'
+$IdeMainJs = Join-Path $IdeOutDir 'main.js'
+$IdeHookSrc = Join-Path $PSScriptRoot 'patch\ideTheme.mjs'
 
 function Write-Step($msg) { Write-Host "[kanagawa] $msg" -ForegroundColor Cyan }
 function Fail($msg) { Write-Host "[kanagawa] ERROR / LOI: $msg" -ForegroundColor Red; exit 1 }
@@ -34,7 +37,11 @@ if (-not (Test-Path $Injector)) { Fail "patch\pixelTheme.js not found / Khong ti
 if (-not (Test-Path $ThemeSrc)) { Fail "$ThemeName folder not found / Khong tim thay thu muc $ThemeName." }
 
 # --- 1. Ensure Antigravity is closed before touching app.asar ---
-$procs = @(Get-Process -Name 'Antigravity', 'Antigravity IDE', 'language_server' -ErrorAction SilentlyContinue)
+$procNames = @('Antigravity', 'language_server')
+if (-not $SkipIde -and (Test-Path $IdeMainJs) -and (Test-Path $IdeHookSrc)) {
+    $procNames += 'Antigravity IDE'
+}
+$procs = @(Get-Process -Name $procNames -ErrorAction SilentlyContinue)
 if ($procs.Count -gt 0) {
     if ($KillRunning) {
         Write-Step "Stopping running Antigravity / Dang dong Antigravity..."
@@ -132,10 +139,8 @@ try {
         }
 
         Copy-Item $Injector $PackedInjector -Force
-        if (-not (Test-Path $Backup)) {
-            Write-Step "Backing up app.asar -> app.asar.pixel-backup"
-            Copy-Item $Asar $Backup -Force
-        }
+        Write-Step "Backing up app.asar -> app.asar.pixel-backup"
+        Copy-Item $Asar $Backup -Force
         $NeedsRepack = $true
     }
 
@@ -163,7 +168,7 @@ Write-Step "Deploying $ThemeName to $ThemeDst..."
 if (Test-Path $ThemeDst) { Remove-Item $ThemeDst -Recurse -Force -Confirm:$false }
 New-Item -ItemType Directory -Path $ThemeDst -Force | Out-Null
 Get-ChildItem -Path $ThemeSrc -Force | Where-Object {
-    $_.Name -notin @('.live-watch.json', 'repo-link.json')
+    $_.Name -notin @('.live-watch.json', '.ide-live-watch.json', 'repo-link.json')
 } | ForEach-Object {
     Copy-Item $_.FullName -Destination (Join-Path $ThemeDst $_.Name) -Recurse -Force
 }
@@ -180,20 +185,25 @@ $ActiveConfigPath = Join-Path $Resources 'active-theme.json'
 [System.IO.File]::WriteAllText($ActiveConfigPath, $ActiveConfig, (New-Object System.Text.UTF8Encoding($false)))
 
 # --- 4. Link Antigravity IDE (if installed) to the same shared theme ---
-$IdeOutDir = Join-Path $env:LOCALAPPDATA 'Programs\Antigravity IDE\resources\app\out'
-$IdeMainJs = Join-Path $IdeOutDir 'main.js'
-$IdeHookSrc = Join-Path $PSScriptRoot 'patch\ideTheme.mjs'
 if (-not $SkipIde -and (Test-Path $IdeMainJs) -and (Test-Path $IdeHookSrc)) {
     Write-Step "Linking Antigravity IDE to shared $ThemeName / Dang lien ket Antigravity IDE..."
     $IdeHookDst = Join-Path $IdeOutDir 'kanagawa-ide-hook.mjs'
     $IdeMainBackup = "$IdeMainJs.pixel-backup"
-    if (-not (Test-Path $IdeMainBackup)) {
-        Copy-Item $IdeMainJs $IdeMainBackup -Force
-    }
     Copy-Item $IdeHookSrc $IdeHookDst -Force
     $ideMainContent = [System.IO.File]::ReadAllText($IdeMainJs)
-    $ideMarker = '/* === KANAGAWA-IDE-HOOK-START === */ import "./kanagawa-ide-hook.mjs"; /* === KANAGAWA-IDE-HOOK-END === */'
-    if (-not $ideMainContent.Contains('kanagawa-ide-hook.mjs')) {
+    $ideStart = '/* === KANAGAWA-IDE-HOOK-START === */'
+    $ideEnd   = '/* === KANAGAWA-IDE-HOOK-END === */'
+    $ideMarker = "$ideStart import `"./kanagawa-ide-hook.mjs`"; $ideEnd"
+    $hasStart = $ideMainContent.Contains($ideStart)
+    $hasEnd   = $ideMainContent.Contains($ideEnd)
+    $hasHook  = $ideMainContent.Contains('kanagawa-ide-hook.mjs')
+    if (-not $hasHook) {
+        Copy-Item $IdeMainJs $IdeMainBackup -Force
+        $ideMainContent = $ideMainContent.TrimEnd() + "`n" + $ideMarker + "`n"
+        [System.IO.File]::WriteAllText($IdeMainJs, $ideMainContent, (New-Object System.Text.UTF8Encoding($false)))
+    }
+    elseif (-not ($hasStart -and $hasEnd)) {
+        $ideMainContent = [regex]::Replace($ideMainContent, '\r?\n?(?:/\* === KANAGAWA-IDE-HOOK-START === \*/)?[^\r\n]*kanagawa-ide-hook\.mjs[^\r\n]*(?:/\* === KANAGAWA-IDE-HOOK-END === \*/)?', '')
         $ideMainContent = $ideMainContent.TrimEnd() + "`n" + $ideMarker + "`n"
         [System.IO.File]::WriteAllText($IdeMainJs, $ideMainContent, (New-Object System.Text.UTF8Encoding($false)))
     }

@@ -11,22 +11,23 @@ This file instructs AI coding assistants (Antigravity, Claude Code, Codex, Curso
 
 ### 1. Kiến trúc & Vai trò từng file
 
-- `install.ps1` / `install.bat`: Giải nén `%LOCALAPPDATA%\Programs\Antigravity\resources\app.asar`, backup thành `app.asar.pixel-backup`, patch `dist/utils.js` & `dist/ipcHandlers.js`, chèn `patch/pixelTheme.js`, đóng gói lại `app.asar`, rồi copy `kanagawa-theme/` sang `resources\kanagawa-theme\` và ghi `resources\active-theme.json`.
-- `patch/pixelTheme.js`: Injector chạy trong `app.asar`, nạp CSS + `studio.js` (nếu có), mở `fs.watch` live hot-swap CSS không cần reload toàn trang, xử lý bridge `__KN_STUDIO__` (tương thích Electron 44 `console-message` event object) và đồng bộ ngược về repo qua `repo-link.json`.
-- `kanagawa-theme/theme-builder.js`: Core compiler (Node thuần, 0 dependency) quản lý config schema v2, biên dịch block `:root` `--kn-*`/`--kw-*`/`--kl-*`/`--px-chrome-*` (`KANAGAWA-CUSTOM-SURFACE`), `KANAGAWA-EMBEDDED-ASSETS`, `KANAGAWA-USER-CUSTOM-CSS`, `loading.html` (CSP + 3 style: `kanagawa-wave`/`minimal`/`terminal`), thư viện ảnh `assets/library/` (hỗ trợ `.avif`) và `profiles/*.json` (hồ sơ built-in đặt `preserveWallpaper`/`preserveAvatars` để không ghi đè ảnh hiện tại của người dùng khi đổi preset/look, riêng `minimal-clean` đặt `wallpaper: "NONE"`).
-- `kanagawa-theme/studio.js`: Giao diện In-App Theme Studio (Shadow DOM cô lập, zero-`innerHTML`, phím tắt `Ctrl+Alt+K`), live preview pure CSS variables 60fps.
+- `install.ps1` / `install.bat`: Giải nén `%LOCALAPPDATA%\Programs\Antigravity\resources\app.asar`, backup thành `app.asar.pixel-backup`, patch `dist/utils.js` & `dist/ipcHandlers.js`, chèn `patch/pixelTheme.js`, đóng gói lại `app.asar`, copy `kanagawa-theme/` sang `resources\kanagawa-theme\` và ghi `resources\active-theme.json`. Trừ khi truyền `-SkipIde`, script cũng tự động liên kết `%LOCALAPPDATA%\Programs\Antigravity IDE\resources\app\out\` (backup `main.js` → `main.js.pixel-backup`, chèn marker `KANAGAWA-IDE-HOOK-START/END` và copy `patch/ideTheme.mjs` → `kanagawa-ide-hook.mjs`).
+- `patch/pixelTheme.js`: Injector chạy trong `app.asar` (Agent Manager), nạp CSS + `studio.js` (nếu có), mở `fs.watch` live hot-swap CSS không cần reload toàn trang, xử lý bridge `__KN_STUDIO__` (tương thích Electron 44 `console-message` event object) và đồng bộ ngược về repo qua `repo-link.json`.
+- `patch/ideTheme.mjs`: Hook ESM chạy trong **Antigravity IDE** (`%LOCALAPPDATA%\Programs\Antigravity IDE\resources\app\out\kanagawa-ide-hook.mjs`), liên kết trực tiếp các cửa sổ workbench (`workbench*.html`, bao gồm `workbench-jetski-agent*.html`) tới `%LOCALAPPDATA%\Programs\antigravity\resources\kanagawa-theme\` để dùng chung CSS, `studio.js` (`Ctrl+Alt+K`), config, thư viện ảnh & đồng bộ live 2 chiều qua `fs.watch` và `repo-link.json`.
+- `kanagawa-theme/theme-builder.js`: Core compiler (Node thuần, 0 dependency) quản lý config schema v2, biên dịch block `:root` `--kn-*`/`--kw-*`/`--kl-*`/`--px-chrome-*` (`KANAGAWA-CUSTOM-SURFACE`), `KANAGAWA-EMBEDDED-ASSETS`, `KANAGAWA-USER-CUSTOM-CSS`, `loading.html` (CSP + 3 style: `kanagawa-wave`/`minimal`/`terminal`), thư viện ảnh `assets/library/` (hỗ trợ `.avif`) và `profiles/*.json` (hồ sơ built-in tạo mới bởi `ensureDefaultProfiles` đặt `preserveWallpaper`/`preserveAvatars` để không ghi đè ảnh hiện tại của người dùng, riêng `minimal-clean` đặt `wallpaper: "NONE"`, trong khi các hồ sơ đã được tùy biến sẵn trong repo giữ nguyên cấu hình/ảnh của chúng).
+- `kanagawa-theme/studio.js`: Giao diện In-App Theme Studio (Shadow DOM cô lập, zero-`innerHTML` tương thích TrustedTypes của IDE, song ngữ `🌐 VI / EN`, phím tắt `Ctrl+Alt+K`), hoạt động trên cả Agent Manager lẫn Antigravity IDE (theo dõi cả `document.body` lẫn `.monaco-workbench`) với live preview 60fps.
 - `kanagawa-theme/kanagawa.config.json`: Nguồn cấu hình trung tâm v2 (`activeProfile`, `preset`, `dark`/`light`, `wallpaper`, `wallpaperLight`, `wallpaperFit`, `wallpaperEffects`, `surfaces`, `avatars`, `typography`, `composer`, `userAvatar`, `agentAvatar`, `loading`, `studio`).
 - `kanagawa-theme/custom.css`: CSS tùy biến riêng của người dùng, tự động giữ lại qua mọi lần biên dịch theme.
-- `kanagawa-theme/kanagawa.css`: Stylesheet hoàn chỉnh của theme (chứa 3 block tự động quản lý ở cuối file: `KANAGAWA-CUSTOM-SURFACE`, `KANAGAWA-EMBEDDED-ASSETS`, `KANAGAWA-USER-CUSTOM-CSS`).
+- `kanagawa-theme/kanagawa.css`: Stylesheet hoàn chỉnh của theme cho cả Agent Manager lẫn `.monaco-workbench` IDE (chứa 3 block tự động quản lý ở cuối file: `KANAGAWA-CUSTOM-SURFACE`, `KANAGAWA-EMBEDDED-ASSETS`, `KANAGAWA-USER-CUSTOM-CSS`).
 - `kanagawa-theme/loading.html`: Màn hình loading khi mở Antigravity (được sinh tự động từ `kanagawa.config.json` với style `kanagawa-wave` / `minimal` / `terminal` và CSP).
-- `scripts/apply_kanagawa_config.js`: CLI wrapper gọi `kanagawa-theme/theme-builder.js` (`--help`, `--seed-only`, `--dry-run`, `--list-presets`, `--list-profiles`, `--profile`, `--preset`, `--wallpaper`, `--scrim-style`, `--loading-style terminal`, `--user-avatar-*`/`--agent-avatar-*`, `--wp-blur`, `--glass-blur`, `--panel-opacity`, `--save-profile`, hỗ trợ `--flag=value`).
+- `scripts/apply_kanagawa_config.js`: CLI wrapper gọi `kanagawa-theme/theme-builder.js` (`--help`, `--seed-only`, `--dry-run`, `--list-presets`, `--list-profiles`, `--profile`, `--preset`, `--wallpaper`, `--scrim-style`, `--loading-style terminal`, `--user-avatar-*`/`--agent-avatar-*`, `--wp-blur`, `--glass-blur`, `--panel-opacity`, `--studio-lang`, `--save-profile`, hỗ trợ `--flag=value`).
 - `customize-kanagawa.ps1` / `customize-kanagawa.bat`: Wrapper PowerShell (menu + picker `.avif` + đầy đủ cờ CLI màu/avatar/scrim/typography/loading/studio) gọi `apply_kanagawa_config.js` rồi chạy `switch-theme.ps1`.
-- `switch-theme.ps1` / `switch-theme.bat`: Copy `kanagawa-theme/*` sang `resources\kanagawa-theme\` (có cắt tỉa file thừa trong `profiles/` & `assets/library/`), ghi `repo-link.json`; nếu `.live-watch.json` khớp PID Antigravity đang chạy thì để `fs.watch` hot-swap CSS không cần reload (ngược lại hoặc truyền `-ForceReload` mới gửi CDP `Page.reload`).
-- `uninstall.ps1` / `uninstall.bat`: Khôi phục `app.asar.pixel-backup` (nếu thiếu backup vẫn tự reverse-unpatch sạch 6 anchor `dist/utils.js` + `dist/ipcHandlers.js` và xóa `dist/pixelTheme.js`) rồi xóa `resources\kanagawa-theme\` + `active-theme.json`.
+- `switch-theme.ps1` / `switch-theme.bat`: Copy `kanagawa-theme/*` sang `resources\kanagawa-theme\` (có cắt tỉa file thừa trong `profiles/` & `assets/library/`), ghi `repo-link.json`, và đồng bộ `patch/ideTheme.mjs` sang `Antigravity IDE\resources\app\out\kanagawa-ide-hook.mjs` nếu IDE đã được gắn hook; nếu tiến trình Antigravity hoặc Antigravity IDE đang bật live-watch thì để `fs.watch` hot-swap CSS không cần reload (ngược lại hoặc truyền `-ForceReload` mới gửi CDP `Page.reload`).
+- `uninstall.ps1` / `uninstall.bat`: Khôi phục `app.asar.pixel-backup` (nếu thiếu backup vẫn tự reverse-unpatch sạch 6 anchor `dist/utils.js` + `dist/ipcHandlers.js` và xóa `dist/pixelTheme.js`), khôi phục `Antigravity IDE\resources\app\out\main.js` (từ `main.js.pixel-backup` hoặc gỡ marker `KANAGAWA-IDE-HOOK-START/END`) + xóa `kanagawa-ide-hook.mjs`, rồi xóa `resources\kanagawa-theme\` + `active-theme.json`.
 
 ### 2. Quy tắc an toàn bắt buộc cho AI
 
-1. **KHÔNG tự chạy `.\install.ps1 -KillRunning` hoặc `.\uninstall.ps1 -KillRunning` từ terminal bên trong Antigravity:** Lệnh `-KillRunning` sẽ tắt tiến trình `Antigravity` (giết luôn phiên làm việc của chính bạn). Nếu cần cài mới / gỡ cài đặt / cập nhật `patch\pixelTheme.js`, hãy yêu cầu người dùng đóng Antigravity hoặc tự chạy lệnh từ một cửa sổ PowerShell bên ngoài.
+1. **KHÔNG tự chạy `.\install.ps1 -KillRunning` hoặc `.\uninstall.ps1 -KillRunning` từ terminal bên trong Antigravity hoặc Antigravity IDE:** Lệnh `-KillRunning` sẽ buộc đóng các tiến trình `Antigravity`, `Antigravity IDE` (trừ khi dùng `install.ps1 -SkipIde`) và `language_server` (giết luôn phiên làm việc của chính bạn). Nếu cần cài mới / gỡ cài đặt / cập nhật `patch\pixelTheme.js` hoặc gắn hook IDE lần đầu, hãy yêu cầu người dùng đóng app hoặc tự chạy lệnh từ cửa sổ PowerShell bên ngoài.
 2. **Tùy biến giao diện KHÔNG cần đóng Antigravity hay repack `app.asar`:** Sau khi đã cài 1 lần, mọi thao tác đổi hình nền, màu, preset, avatar hoặc sửa CSS đều dùng `.\customize-kanagawa.ps1` hoặc `.\switch-theme.ps1` (hot-reload an toàn ngay trong phiên AI).
 3. **KHÔNG lưu ảnh lớn (hình nền > ~2 MB) vào CSS Custom Property (`--kn-*`):** Chromium cắt cụt CSS variable lớn hơn ~2 MB khiến hình nền bị đen thui. Luôn dùng `scripts/apply_kanagawa_config.js` để xuất rule trực tiếp (`html::before`, avatar `::before`) trong block `KANAGAWA-EMBEDDED-ASSETS`.
 4. **Không sửa tay vào trong 2 block được quản lý tự động** ở cuối `kanagawa-theme/kanagawa.css`:
@@ -38,13 +39,14 @@ This file instructs AI coding assistants (Antigravity, Claude Code, Codex, Curso
 
 ### 3. Quy trình AI thực hiện cài đặt & tùy biến
 
-#### A. Hướng dẫn người dùng cài đặt lần đầu (hoặc sau khi Antigravity tự update)
-- Yêu cầu môi trường: Windows, Google Antigravity 2.x tại `%LOCALAPPDATA%\Programs\Antigravity`, Node.js (để chạy `npx @electron/asar` và scripts).
+#### A. Hướng dẫn người dùng cài đặt lần đầu (hoặc sau khi Antigravity / Antigravity IDE tự update)
+- Yêu cầu môi trường: Windows, Google Antigravity 2.x tại `%LOCALAPPDATA%\Programs\Antigravity` (và tùy chọn Antigravity IDE tại `%LOCALAPPDATA%\Programs\Antigravity IDE`), Node.js (để chạy `npx @electron/asar` và scripts).
 - Nếu chưa cài, hướng dẫn người dùng chạy trong **PowerShell bên ngoài** tại thư mục repo:
   ```powershell
   .\install.ps1 -KillRunning
   ```
-- Sau đó mở lại Antigravity.
+  *(Truyền thêm `-SkipIde` nếu chỉ muốn cài cho Antigravity chính và bỏ qua Antigravity IDE.)*
+- Sau đó mở lại Antigravity (và Antigravity IDE nếu dùng).
 
 #### B. Tùy biến nhanh theo yêu cầu người dùng (chạy trực tiếp bằng shell)
 - **Xem danh sách preset:**
@@ -94,22 +96,23 @@ Khi truyền đường dẫn ảnh nằm ngoài thư mục `kanagawa-theme/`, `t
 
 ### 1. Repository Architecture
 
-- `install.ps1` / `install.bat`: Extracts `%LOCALAPPDATA%\Programs\Antigravity\resources\app.asar`, creates `app.asar.pixel-backup`, patches `dist/utils.js` & `dist/ipcHandlers.js`, injects `patch/pixelTheme.js`, repacks `app.asar`, deploys `kanagawa-theme/` to `resources\kanagawa-theme\`, and writes `resources\active-theme.json`.
-- `patch/pixelTheme.js`: Runtime loader inside `app.asar` that injects active theme CSS + `studio.js` (if present), runs `fs.watch` zero-reload CSS hot-swap, bridges `__KN_STUDIO__` (Electron 44 `console-message` event object compatible), and mirrors Studio edits back to the repo via `repo-link.json`.
-- `kanagawa-theme/theme-builder.js`: Dependency-free Node compiler managing config schema v2, generating `:root` `--kn-*`/`--kw-*`/`--kl-*`/`--px-chrome-*` block (`KANAGAWA-CUSTOM-SURFACE`), `KANAGAWA-EMBEDDED-ASSETS`, `KANAGAWA-USER-CUSTOM-CSS`, `loading.html` (CSP + styles `kanagawa-wave`/`minimal`/`terminal`), `assets/library/` (including `.avif`), and `profiles/*.json` (built-in presets mark `preserveWallpaper`/`preserveAvatars` so switching presets preserves active user media, while `minimal-clean` sets `wallpaper: "NONE"`).
-- `kanagawa-theme/studio.js`: In-App Theme Studio (Shadow DOM isolated, zero-`innerHTML`, `Ctrl+Alt+K`), live 60fps pure CSS-variable preview.
+- `install.ps1` / `install.bat`: Extracts `%LOCALAPPDATA%\Programs\Antigravity\resources\app.asar`, creates `app.asar.pixel-backup`, patches `dist/utils.js` & `dist/ipcHandlers.js`, injects `patch/pixelTheme.js`, repacks `app.asar`, deploys `kanagawa-theme/` to `resources\kanagawa-theme\`, and writes `resources\active-theme.json`. Unless `-SkipIde` is passed, it also links `%LOCALAPPDATA%\Programs\Antigravity IDE\resources\app\out\` (backing up `main.js` → `main.js.pixel-backup`, injecting `KANAGAWA-IDE-HOOK-START/END`, and copying `patch/ideTheme.mjs` → `kanagawa-ide-hook.mjs`).
+- `patch/pixelTheme.js`: Runtime loader inside `app.asar` (Agent Manager) that injects active theme CSS + `studio.js` (if present), runs `fs.watch` zero-reload CSS hot-swap, bridges `__KN_STUDIO__` (Electron 44 `console-message` event object compatible), and mirrors Studio edits back to the repo via `repo-link.json`.
+- `patch/ideTheme.mjs`: ESM hook for **Antigravity IDE** (`%LOCALAPPDATA%\Programs\Antigravity IDE\resources\app\out\kanagawa-ide-hook.mjs`), attaching theme CSS & `studio.js` (`Ctrl+Alt+K`) to IDE workbench windows (`workbench*.html`, including `workbench-jetski-agent*.html`) directly from `%LOCALAPPDATA%\Programs\antigravity\resources\kanagawa-theme\` with live two-way `fs.watch` and `repo-link.json` sync.
+- `kanagawa-theme/theme-builder.js`: Dependency-free Node compiler managing config schema v2, generating `:root` `--kn-*`/`--kw-*`/`--kl-*`/`--px-chrome-*` block (`KANAGAWA-CUSTOM-SURFACE`), `KANAGAWA-EMBEDDED-ASSETS`, `KANAGAWA-USER-CUSTOM-CSS`, `loading.html` (CSP + styles `kanagawa-wave`/`minimal`/`terminal`), `assets/library/` (including `.avif`), and `profiles/*.json` (newly generated built-in presets in `ensureDefaultProfiles` mark `preserveWallpaper`/`preserveAvatars` so switching preserves active user media, `minimal-clean` sets `wallpaper: "NONE"`, and pre-customized built-in profiles in `profiles/` keep their explicit saved config/assets).
+- `kanagawa-theme/studio.js`: In-App Theme Studio (Shadow DOM isolated, zero-`innerHTML` TrustedTypes-safe for IDE, bilingual `🌐 VI / EN`, `Ctrl+Alt+K`), supporting both Agent Manager and Antigravity IDE (watching both `document.body` and `.monaco-workbench`) with 60fps live preview.
 - `kanagawa-theme/kanagawa.config.json`: Source of truth v2 (`activeProfile`, `preset`, `dark`/`light`, `wallpaper`, `wallpaperLight`, `wallpaperFit`, `wallpaperEffects`, `surfaces`, `avatars`, `typography`, `composer`, `userAvatar`, `agentAvatar`, `loading`, `studio`).
 - `kanagawa-theme/custom.css`: Persistent user CSS overrides preserved across all theme rebuilds.
-- `kanagawa-theme/kanagawa.css`: Main theme stylesheet (ends with managed blocks: `KANAGAWA-CUSTOM-SURFACE`, `KANAGAWA-EMBEDDED-ASSETS`, `KANAGAWA-USER-CUSTOM-CSS`).
+- `kanagawa-theme/kanagawa.css`: Main theme stylesheet covering both Agent Manager and IDE `.monaco-workbench` (ends with managed blocks: `KANAGAWA-CUSTOM-SURFACE`, `KANAGAWA-EMBEDDED-ASSETS`, `KANAGAWA-USER-CUSTOM-CSS`).
 - `kanagawa-theme/loading.html`: Startup loading overlay HTML generated from `kanagawa.config.json` (`kanagawa-wave` / `minimal` / `terminal`, CSP-hardened).
-- `scripts/apply_kanagawa_config.js`: CLI wrapper over `kanagawa-theme/theme-builder.js` (`--help`, `--seed-only`, `--dry-run`, `--list-presets`, `--list-profiles`, `--profile`, `--preset`, `--wallpaper`, `--scrim-style`, `--loading-style terminal`, `--user-avatar-*`/`--agent-avatar-*`, `--wp-blur`, `--glass-blur`, `--panel-opacity`, `--save-profile`, supporting `--flag=value`).
+- `scripts/apply_kanagawa_config.js`: CLI wrapper over `kanagawa-theme/theme-builder.js` (`--help`, `--seed-only`, `--dry-run`, `--list-presets`, `--list-profiles`, `--profile`, `--preset`, `--wallpaper`, `--scrim-style`, `--loading-style terminal`, `--user-avatar-*`/`--agent-avatar-*`, `--wp-blur`, `--glass-blur`, `--panel-opacity`, `--studio-lang`, `--save-profile`, supporting `--flag=value`).
 - `customize-kanagawa.ps1` / `customize-kanagawa.bat`: PowerShell wrapper (with `.avif` picker, menu, and full palette/avatar/scrim/typography/loading/studio flags) invoking `apply_kanagawa_config.js` followed by `switch-theme.ps1`.
-- `switch-theme.ps1` / `switch-theme.bat`: Syncs `kanagawa-theme/*` to `resources\kanagawa-theme\` (pruning stale files in `profiles/` & `assets/library/`) and writes `repo-link.json`; relies on zero-reload `fs.watch` when `.live-watch.json` matches a live Antigravity PID (falling back to CDP `Page.reload` otherwise or with `-ForceReload`).
-- `uninstall.ps1` / `uninstall.bat`: Restores `app.asar.pixel-backup` (with safe reverse-unpatch fallback reversing the 6 `dist/utils.js` anchors + `dist/ipcHandlers.js` and removing `dist/pixelTheme.js` if the backup is missing) and removes deployed theme files + `active-theme.json`.
+- `switch-theme.ps1` / `switch-theme.bat`: Syncs `kanagawa-theme/*` to `resources\kanagawa-theme\` (pruning stale files in `profiles/` & `assets/library/`), writes `repo-link.json`, and updates `kanagawa-ide-hook.mjs` from `patch/ideTheme.mjs` if Antigravity IDE is hooked; relies on zero-reload `fs.watch` when Agent Manager or Antigravity IDE live-watch is active (falling back to CDP `Page.reload` otherwise or with `-ForceReload`).
+- `uninstall.ps1` / `uninstall.bat`: Restores `app.asar.pixel-backup` (with safe reverse-unpatch fallback reversing the 6 `dist/utils.js` anchors + `dist/ipcHandlers.js` and removing `dist/pixelTheme.js`), restores `Antigravity IDE\resources\app\out\main.js` (from `main.js.pixel-backup` or stripping `KANAGAWA-IDE-HOOK-START/END`) + deletes `kanagawa-ide-hook.mjs`, and removes deployed theme files + `active-theme.json`.
 
 ### 2. Mandatory Safety Rules for AI Agents
 
-1. **NEVER run `.\install.ps1 -KillRunning` or `.\uninstall.ps1 -KillRunning` from an integrated terminal inside Antigravity:** It terminates the `Antigravity` process (killing your own active session). Instruct the user to run those from an **external PowerShell** window when installing, uninstalling, or updating `patch\pixelTheme.js`.
+1. **NEVER run `.\install.ps1 -KillRunning` or `.\uninstall.ps1 -KillRunning` from an integrated terminal inside Antigravity or Antigravity IDE:** It forcefully terminates `Antigravity`, `Antigravity IDE` (unless `install.ps1 -SkipIde` is used), and `language_server` (killing your own active session). Instruct the user to run those from an **external PowerShell** window when installing, uninstalling, patching IDE `out/main.js`, or updating `patch\pixelTheme.js`.
 2. **Customization never requires repacking `app.asar`:** Once installed, always use `.\customize-kanagawa.ps1` or `.\switch-theme.ps1` for safe live updates.
 3. **NEVER store large wallpapers (> ~2 MB) inside CSS custom properties (`--kn-*`):** Chromium truncates oversized CSS variables, resulting in a black background. Always let `scripts/apply_kanagawa_config.js` emit direct rules (`html::before`, avatar `::before`) inside `KANAGAWA-EMBEDDED-ASSETS`.
 4. **Do not manually edit inside managed blocks** at the bottom of `kanagawa-theme/kanagawa.css` (`KANAGAWA-CUSTOM-SURFACE-START/END` and `KANAGAWA-EMBEDDED-ASSETS-START/END`); put permanent layout/component CSS edits before them.
@@ -118,13 +121,14 @@ Khi truyền đường dẫn ảnh nằm ngoài thư mục `kanagawa-theme/`, `t
 
 ### 3. Standard AI Runbooks
 
-#### A. Initial Installation / After Antigravity Auto-Update
-- Prerequisites: Windows, Google Antigravity 2.x (`%LOCALAPPDATA%\Programs\Antigravity`), Node.js.
+#### A. Initial Installation / After Antigravity or Antigravity IDE Auto-Update
+- Prerequisites: Windows, Google Antigravity 2.x (`%LOCALAPPDATA%\Programs\Antigravity`), optional Antigravity IDE (`%LOCALAPPDATA%\Programs\Antigravity IDE`), Node.js.
 - Prompt user to run in an **external PowerShell** window in repo root:
   ```powershell
   .\install.ps1 -KillRunning
   ```
-- Re-launch Antigravity.
+  *(Pass `-SkipIde` to theme only main Antigravity without hooking Antigravity IDE.)*
+- Re-launch Antigravity (and Antigravity IDE if installed).
 
 #### B. Programmatic Customization
 - List presets (`kanagawa-wave`, `kanagawa-dragon`, `sakura-dusk`, `midnight-aqua`, `tokyo-night`, `nordic-frost`):

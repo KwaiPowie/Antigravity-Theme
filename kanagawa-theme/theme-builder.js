@@ -431,6 +431,23 @@ function defaultConfig() {
   };
 }
 
+function stripBom(text) {
+  return String(text || "").replace(/^\uFEFF/, "");
+}
+
+function pickBool(val, fallback) {
+  if (val === false) return false;
+  if (val === true) return true;
+  if (typeof val === "string") {
+    const s = val.trim().toLowerCase();
+    if (s === "false" || s === "0" || s === "no" || s === "off") return false;
+    if (s === "true" || s === "1" || s === "yes" || s === "on") return true;
+  }
+  return fallback;
+}
+
+const VALID_PILL_POSITIONS = new Set(["bottom-right", "bottom-left", "top-right"]);
+
 function pickFinite(val, fallback) {
   if (val === null || val === undefined || val === "" || typeof val === "boolean") return fallback;
   if (typeof val === "string" && !val.trim()) return fallback;
@@ -474,11 +491,16 @@ function mergeConfig(raw) {
   for (const key of ["userSize", "userRadius", "userRotate", "agentSize", "agentRadius", "agentRotate"]) {
     merged.avatars[key] = pickFinite(merged.avatars[key], def.avatars[key]);
   }
-  merged.avatars.userVisible = merged.avatars.userVisible !== false && merged.avatars.userVisible !== "false";
-  merged.avatars.agentVisible = merged.avatars.agentVisible !== false && merged.avatars.agentVisible !== "false";
+  merged.avatars.userVisible = pickBool(merged.avatars.userVisible, def.avatars.userVisible);
+  merged.avatars.agentVisible = pickBool(merged.avatars.agentVisible, def.avatars.agentVisible);
   for (const key of ["chatFontSize", "codeFontSize", "lineHeight"]) {
     merged.typography[key] = pickFinite(merged.typography[key], def.typography[key]);
   }
+  merged.loading.showEmblem = pickBool(merged.loading.showEmblem, def.loading.showEmblem);
+  merged.loading.showProgress = pickBool(merged.loading.showProgress, def.loading.showProgress);
+  merged.studio.showTriggerPill = pickBool(merged.studio.showTriggerPill, def.studio.showTriggerPill);
+  const rawPillPos = String(merged.studio.pillPosition || "").trim().toLowerCase();
+  merged.studio.pillPosition = VALID_PILL_POSITIONS.has(rawPillPos) ? rawPillPos : def.studio.pillPosition;
   merged.studio.language = String(merged.studio.language || "").trim().toLowerCase() === "en" ? "en" : "vi";
   return merged;
 }
@@ -508,10 +530,13 @@ function hexToRgb(hex) {
 }
 
 function sanitizeCssFont(val) {
-  return String(val || "")
+  let s = String(val || "")
     .replace(/\/\*|\*\//g, "")
     .replace(/[;{}<>\r\n\\]/g, "")
     .trim();
+  if ((s.split('"').length - 1) % 2 !== 0) s = s.replace(/"/g, "");
+  if ((s.split("'").length - 1) % 2 !== 0) s = s.replace(/'/g, "");
+  return s.trim();
 }
 
 function escapeHtml(str) {
@@ -623,7 +648,7 @@ function extractEmbeddedFromCss(css) {
       new RegExp(`^[ \\t]*--kn-wallpaper\\s*:\\s*${urlExpr}\\s*;`, "m"),
     ]),
     wpLightUrl: extractUrl(assetsBlock, [
-      new RegExp(`html:has\\(>\\s*body[^)]*\\)::before\\s*\\{[^}]*?background-image:\\s*${urlExpr}`),
+      new RegExp(`html:has\\(>\\s*body[^}{]*\\)::before\\s*\\{[^}]*?background-image:\\s*${urlExpr}`),
     ]),
     uaUrl: extractUrl(assetsBlock, [
       new RegExp(`\\[data-testid="user-message-bubble"\\][^}{]*::before\\s*\\{[^}]*?background-image:\\s*${urlExpr}\\s*(?:!important)?\\s*;`),
@@ -674,7 +699,7 @@ function seedLibraryFromCss(themeDir, css, onlySlots = null) {
   if (want("agentAvatar") && embedded.aaUrl) {
     if (isBuiltInGeminiStarUrl(embedded.aaUrl)) {
       seeded.agentAvatar = "SVG_STAR";
-    } else if (!embedded.aaUrl.startsWith('url("data:image/svg+xml,')) {
+    } else {
       seeded.agentAvatar = dataUrlWrapperToLibrary(themeDir, embedded.aaUrl, "agent-avatar");
     }
   }
@@ -965,6 +990,7 @@ html:not([data-kn-ui-font="0"]) body :not(:where(
   .monaco-editor, .monaco-editor *,
   .xterm, .xterm *,
   [class*="material-symbols"], [class*="codicon"], [data-icon],
+  .predefined-file-icon, .element-decoration.bubble, .outline-element-decoration.bubble, [class*="theme-icon"],
   [id="kn-studio-host"], [id="kn-studio-host"] *
 )) {
   font-family: var(--kn-ui-font) !important;
@@ -976,9 +1002,14 @@ html:not([data-kn-mono-font="0"]) body {
   --font-mono: var(--kn-mono-font) !important;
 }
 html:not([data-kn-mono-font="0"]) body :is(
-  pre, pre *, code, code *, kbd, samp,
-  .font-mono, .font-mono *,
-  .monaco-editor, .monaco-editor .view-lines, .monaco-editor .view-line,
+  pre,
+  pre :not(:where(button, button *, [role="button"], [role="button"] *, [class*="material-symbols"], [class*="codicon"], [data-icon], div[class*="rounded-xl"] > div:first-child, div[class*="rounded-xl"] > div:first-child *, div[class*="rounded-lg"] > div:first-child, div[class*="rounded-lg"] > div:first-child *)),
+  code,
+  code :not(:where([class*="material-symbols"], [class*="codicon"], [data-icon], button, button *, [role="button"], [role="button"] *)),
+  kbd, samp,
+  .font-mono,
+  .font-mono :not(:where([class*="material-symbols"], [class*="codicon"], [data-icon])),
+  .monaco-editor .view-lines, .monaco-editor .view-line, .monaco-editor .view-line *,
   .xterm, .xterm-rows
 ) {
   --font-mono: var(--kn-mono-font) !important;
@@ -993,15 +1024,18 @@ html:not([data-kn-mono-font="0"]) body :is(
   [data-testid="user-message-bubble"] *,
   .agy-user-bubble,
   .agy-user-bubble *,
-  .leading-relaxed:not(:where([role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="tooltip"] *, [data-mention-menu] *, .surface-composer *, [id="kn-studio-host"] *))
+  .leading-relaxed:not(:where([role="menu"] *, [role="listbox"] *, [role="dialog"] *, [role="tooltip"] *, [data-mention-menu] *, .surface-composer *, .gettingStartedContainer *, .extension-editor *, .settings-editor *, .monaco-hover *, .notification-list-item *, .antigravity-welcome-container *, [id="kn-studio-host"] *))
 ) {
   font-size: var(--kn-chat-font-size) !important;
 }`);
   }
   if (codeFontSizeVar !== "none") {
     staticTypographyRules.push(`html:not([data-kn-code-size="0"]) body :is(
-  pre, pre *, code, kbd, samp,
-  .monaco-editor .view-lines, .monaco-editor .view-line,
+  pre :not(:where(button, button *, [role="button"], [role="button"] *, [class*="material-symbols"], [class*="codicon"], [data-icon], div[class*="rounded-xl"] > div:first-child, div[class*="rounded-xl"] > div:first-child *, div[class*="rounded-lg"] > div:first-child, div[class*="rounded-lg"] > div:first-child *)),
+  code,
+  code :not(:where([class*="material-symbols"], [class*="codicon"], [data-icon], button, button *, [role="button"], [role="button"] *)),
+  kbd, samp,
+  .monaco-editor .view-lines, .monaco-editor .view-line, .monaco-editor .view-line *,
   .xterm-rows
 ) {
   font-size: var(--kn-code-font-size) !important;
@@ -1416,7 +1450,8 @@ function applyPresetToConfig(cfg, presetId, options = {}) {
   return next;
 }
 
-function resolveImageToUrlAndRef(themeDir, spec, fallbackEmbeddedUrl, prefix) {
+function resolveImageToUrlAndRef(themeDir, spec, fallbackEmbeddedUrl, prefix, options = {}) {
+  const dryRun = Boolean(options && options.dryRun);
   const resolved = resolveAssetSpec(themeDir, spec);
   if (resolved.kind === "none") return { url: null, ref: "NONE" };
   if (resolved.kind === "same") return { url: null, ref: "SAME", same: true };
@@ -1426,7 +1461,7 @@ function resolveImageToUrlAndRef(themeDir, spec, fallbackEmbeddedUrl, prefix) {
     return { url: fallbackEmbeddedUrl, ref: spec || "KEEP_EMBEDDED" };
   }
   if (resolved.kind === "inline") {
-    const libRef = dataUrlWrapperToLibrary(themeDir, resolved.value, prefix);
+    const libRef = dryRun ? null : dataUrlWrapperToLibrary(themeDir, resolved.value, prefix);
     return { url: resolved.value, ref: libRef || "KEEP_EMBEDDED" };
   }
   if (resolved.kind === "file") {
@@ -1436,7 +1471,7 @@ function resolveImageToUrlAndRef(themeDir, spec, fallbackEmbeddedUrl, prefix) {
       }
     }
     const url = fileToDataUrl(resolved.path);
-    const ref = resolved.ref || importAssetToLibrary(themeDir, resolved.path, prefix);
+    const ref = resolved.ref || (dryRun ? resolved.path : importAssetToLibrary(themeDir, resolved.path, prefix));
     return { url, ref };
   }
   return { url: fallbackEmbeddedUrl || null, ref: fallbackEmbeddedUrl ? "KEEP_EMBEDDED" : "NONE" };
@@ -1489,7 +1524,8 @@ function applyThemeConfig(themeDir, inputCfg, options = {}) {
   }
 
   // 2. Resolve wallpaper (dark + optional light) and avatars
-  const wpDark = resolveImageToUrlAndRef(themeDir, cfg.wallpaper, embedded.wpUrl, "wp");
+  const assetOpts = { dryRun: Boolean(options.dryRun) };
+  const wpDark = resolveImageToUrlAndRef(themeDir, cfg.wallpaper, embedded.wpUrl, "wp", assetOpts);
   cfg.wallpaper = wpDark.ref;
 
   let wpLightUrl = null;
@@ -1505,13 +1541,13 @@ function applyThemeConfig(themeDir, inputCfg, options = {}) {
     cfg.wallpaperLight = "SAME";
     wpLightMode = "same";
   } else {
-    const wpL = resolveImageToUrlAndRef(themeDir, cfg.wallpaperLight, embedded.wpLightUrl, "wp-light");
+    const wpL = resolveImageToUrlAndRef(themeDir, cfg.wallpaperLight, embedded.wpLightUrl, "wp-light", assetOpts);
     cfg.wallpaperLight = wpL.ref;
     wpLightUrl = wpL.url;
     wpLightMode = wpLightUrl ? "custom" : "none";
   }
 
-  const ua = resolveImageToUrlAndRef(themeDir, cfg.userAvatar, embedded.uaUrl, "user");
+  const ua = resolveImageToUrlAndRef(themeDir, cfg.userAvatar, embedded.uaUrl, "user", assetOpts);
   cfg.userAvatar = ua.ref;
 
   let aaUrl = null;
@@ -1527,7 +1563,7 @@ function applyThemeConfig(themeDir, inputCfg, options = {}) {
     aaUrl = null;
     cfg.agentAvatar.image = "NONE";
   } else {
-    const aa = resolveImageToUrlAndRef(themeDir, cfg.agentAvatar.image, embedded.aaUrl, "agent");
+    const aa = resolveImageToUrlAndRef(themeDir, cfg.agentAvatar.image, embedded.aaUrl, "agent", assetOpts);
     cfg.agentAvatar.image = aa.ref;
     aaUrl = aa.url;
   }
@@ -1642,7 +1678,7 @@ const BUILT_IN_PROFILE_IDS = new Set([
 function readJsonSafe(filePath) {
   try {
     if (fs.existsSync(filePath)) {
-      return JSON.parse(fs.readFileSync(filePath, "utf8"));
+      return JSON.parse(stripBom(fs.readFileSync(filePath, "utf8")));
     }
   } catch {
     // Ignore malformed JSON
@@ -1767,7 +1803,7 @@ function listProfiles(themeDir) {
     .filter((f) => f.endsWith(".json"))
     .map((f) => {
       try {
-        const p = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+        const p = JSON.parse(stripBom(fs.readFileSync(path.join(dir, f), "utf8")));
         const id = p.id || path.basename(f, ".json");
         const cfg = mergeConfig(p.config || p);
         return {
@@ -1847,7 +1883,7 @@ function loadProfile(themeDir, id, currentCfg = null) {
   if (!found) {
     throw new Error(`Profile not found: ${safeId}`);
   }
-  const raw = JSON.parse(fs.readFileSync(found.filePath, "utf8"));
+  const raw = JSON.parse(stripBom(fs.readFileSync(found.filePath, "utf8")));
   const cfg = mergeConfig(raw.config || raw);
   cfg.activeProfile = found.resolvedId || raw.id || safeId;
 
@@ -1929,6 +1965,7 @@ function deleteProfile(themeDir, id) {
 module.exports = {
   MIME_MAP,
   PRESETS,
+  BUILT_IN_PROFILE_IDS,
   defaultConfig,
   mergeConfig,
   hexToRgb,

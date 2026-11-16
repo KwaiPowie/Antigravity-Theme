@@ -137,8 +137,17 @@ $IdeMainJs = Join-Path $IdeOutDir 'main.js'
 $IdeMainBackup = "$IdeMainJs.pixel-backup"
 $IdeHookDst = Join-Path $IdeOutDir 'kanagawa-ide-hook.mjs'
 if (Test-Path $IdeMainBackup) {
-    Write-Step "Restoring Antigravity IDE main.js / Dang khoi phuc Antigravity IDE..."
-    Copy-Item $IdeMainBackup $IdeMainJs -Force
+    $ideHasHook = $true
+    if (Test-Path $IdeMainJs) {
+        $ideHasHook = ([System.IO.File]::ReadAllText($IdeMainJs)).Contains('kanagawa-ide-hook.mjs')
+    }
+    if ($ideHasHook) {
+        Write-Step "Restoring Antigravity IDE main.js / Dang khoi phuc Antigravity IDE..."
+        Copy-Item $IdeMainBackup $IdeMainJs -Force
+    }
+    else {
+        Write-Step "Removing stale Antigravity IDE main.js backup (main.js is already stock)."
+    }
     Remove-Item $IdeMainBackup -Force -Confirm:$false
 }
 elseif (Test-Path $IdeMainJs) {

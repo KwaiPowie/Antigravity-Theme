@@ -27,10 +27,14 @@ function getThemeDir() {
     if (fs.existsSync(activeFile)) {
         try {
             const data = JSON.parse(fs.readFileSync(activeFile, "utf-8"));
-            if (data.theme && fs.existsSync(path.join(resources, data.theme))) {
-                return path.join(resources, data.theme);
+            const name = data && typeof data.theme === "string" ? data.theme.trim() : "";
+            if (name && /^[a-zA-Z0-9_-]+$/.test(name) && fs.existsSync(path.join(resources, name))) {
+                return path.join(resources, name);
             }
         } catch (e) {}
+    }
+    if (fs.existsSync(path.join(resources, "kanagawa-theme"))) {
+        return path.join(resources, "kanagawa-theme");
     }
     if (fs.existsSync(path.join(resources, "doodle-theme", "doodle.css"))) {
         return path.join(resources, "doodle-theme");
@@ -101,48 +105,52 @@ function buildFontCss() {
 // changes mtime), so the edit-then-Ctrl+R workflow is unaffected.
 const cssReadCache = { path: null, mtime: 0, size: 0, userMtime: 0, userSize: 0, customMtime: 0, customSize: 0, css: null };
 
+function findThemeCssFile(themeDir) {
+    if (!themeDir || !fs.existsSync(themeDir)) return null;
+    const themeBase = path.basename(themeDir).toLowerCase();
+    let target = null;
+
+    if (themeBase.includes("kanagawa")) {
+        target = path.join(themeDir, "kanagawa.css");
+    } else if (themeBase.includes("phantom")) {
+        target = path.join(themeDir, "phantom.css");
+    } else if (themeBase.includes("matcha")) {
+        target = path.join(themeDir, "matcha.css");
+    } else if (themeBase.includes("doodle")) {
+        target = path.join(themeDir, "doodle.css");
+    } else if (themeBase.includes("pixel")) {
+        target = path.join(themeDir, "pixel.css");
+    }
+
+    if (!target || !fs.existsSync(target)) {
+        for (const file of ["kanagawa.css", "phantom.css", "matcha.css", "doodle.css", "pixel.css"]) {
+            const p = path.join(themeDir, file);
+            if (fs.existsSync(p)) { target = p; break; }
+        }
+    }
+    if (!target || !fs.existsSync(target)) {
+        const byName = path.join(themeDir, themeBase.replace(/-theme$/, "") + ".css");
+        if (fs.existsSync(byName)) {
+            target = byName;
+        }
+        else {
+            const hit = fs.readdirSync(themeDir).find((f) => {
+                const lower = f.toLowerCase();
+                return lower.endsWith(".css") && lower !== "custom.css" && lower !== "glass-user.css";
+            });
+            if (hit) {
+                target = path.join(themeDir, hit);
+            }
+        }
+    }
+    return (target && fs.existsSync(target)) ? target : null;
+}
+
 function readThemeCss() {
     try {
         const themeDir = getThemeDir();
-        const themeBase = path.basename(themeDir).toLowerCase();
-        let target = null;
-
-        // 1. 精准按主题目录前缀匹配对应的 CSS 文件
-        if (themeBase.includes("phantom")) {
-            target = path.join(themeDir, "phantom.css");
-        } else if (themeBase.includes("matcha")) {
-            target = path.join(themeDir, "matcha.css");
-        } else if (themeBase.includes("doodle")) {
-            target = path.join(themeDir, "doodle.css");
-        } else if (themeBase.includes("pixel")) {
-            target = path.join(themeDir, "pixel.css");
-        }
-
-        // 2. 依次检查 4 套主题的主样式文件作为兜底
-        if (!target || !fs.existsSync(target)) {
-            for (const file of ["phantom.css", "matcha.css", "doodle.css", "pixel.css"]) {
-                const p = path.join(themeDir, file);
-                if (fs.existsSync(p)) { target = p; break; }
-            }
-        }
-        // 3. 通用兜底：第 1、2 步都是写死的四套主题名，新增第五套主题（glass-theme/
-        //    glass.css 等）会双双落空 —— readThemeCss 返回空串，insertCSS 插入空表，
-        //    表现为「切过去之后整个应用完全没有主题」（2026-09-17 实测踩到）。
-        //    这里按目录名推出同名 CSS（<目录名去掉 -theme>.css），再退一步取目录里
-        //    任意一个 .css，任何新主题都不必再改注入器。
-        if (!target || !fs.existsSync(target)) {
-            const byName = path.join(themeDir, themeBase.replace(/-theme$/, "") + ".css");
-            if (fs.existsSync(byName)) {
-                target = byName;
-            }
-            else {
-                const hit = fs.readdirSync(themeDir).find((f) => f.toLowerCase().endsWith(".css"));
-                if (hit) {
-                    target = path.join(themeDir, hit);
-                }
-            }
-        }
-        if (!target || !fs.existsSync(target)) {
+        const target = findThemeCssFile(themeDir);
+        if (!target) {
             console.error("[theme] no CSS file found in theme dir:", themeDir);
             return "";
         }
@@ -3271,7 +3279,7 @@ async function broadcastThemeCssRefresh() {
     for (const entry of activeThemeWindows.values()) {
         if (!entry || entry.win.isDestroyed() || entry.wc.isDestroyed()) continue;
         try { syncTitleBarOverlay(entry.win); } catch (_) {}
-        tasks.push(Promise.resolve(entry.applyCss(css)));
+        tasks.push(Promise.resolve(entry.applyCss(css)).catch(() => {}));
     }
     if (tasks.length > 0) {
         await Promise.all(tasks);
@@ -3329,7 +3337,7 @@ function ensureThemeDirWatch(themeDir) {
             const norm = String(filename || "").replace(/\\/g, "/").toLowerCase();
             if (!norm) return;
             const base = path.posix.basename(norm);
-            if (!base || base === ".live-watch.json" || base === "repo-link.json" || base.endsWith(".tmp") || base.endsWith(".bak")) return;
+            if (!base || base === ".live-watch.json" || base === ".ide-live-watch.json" || base === "repo-link.json" || base.endsWith(".tmp") || base.endsWith(".bak")) return;
             if (norm === "studio.js") studioChanged = true;
             else if (norm === "custom.css") { cssChanged = true; stateChanged = true; }
             else if (norm.endsWith(".css")) cssChanged = true;
@@ -3355,6 +3363,7 @@ function ensureThemeDirWatch(themeDir) {
                     try {
                         const builder = getThemeBuilder(themeDir);
                         if (builder) {
+                            markInternalWrite(600);
                             const stateData = buildStudioState(themeDir, builder);
                             broadcastStudioState(null, stateData, true);
                         }
@@ -3409,8 +3418,8 @@ function readCurrentThemeConfig(themeDir, builder) {
 function buildStudioState(themeDir, builder, extraThumbs) {
     builder.ensureCustomCssFile(themeDir);
     if (builder.listLibraryAssets(themeDir).length === 0) {
-        const cssPath = path.join(themeDir, "kanagawa.css");
-        if (fs.existsSync(cssPath)) {
+        const cssPath = findThemeCssFile(themeDir);
+        if (cssPath && fs.existsSync(cssPath)) {
             try { builder.seedLibraryFromCss(themeDir, fs.readFileSync(cssPath, "utf-8")); } catch (_) {}
         }
     }
@@ -3478,7 +3487,10 @@ async function handleStudioMessage(win, wc, rawMsg) {
 
         if (action === "apply-config") {
             markInternalWrite();
-            const res = builder.applyThemeConfig(themeDir, parsed.config || readCurrentThemeConfig(themeDir, builder));
+            const nextCfg = (parsed.config && typeof parsed.config === "object" && !Array.isArray(parsed.config))
+                ? parsed.config
+                : readCurrentThemeConfig(themeDir, builder);
+            const res = builder.applyThemeConfig(themeDir, nextCfg);
             await broadcastThemeCssRefresh();
             mirrorToRepo(themeDir, ["kanagawa.config.json", "kanagawa.css", "loading.html", "custom.css"]);
             markInternalWrite();
@@ -3495,7 +3507,9 @@ async function handleStudioMessage(win, wc, rawMsg) {
 
         if (action === "apply-preset-colors") {
             markInternalWrite();
-            const baseCfg = parsed.config || readCurrentThemeConfig(themeDir, builder);
+            const baseCfg = (parsed.config && typeof parsed.config === "object" && !Array.isArray(parsed.config))
+                ? parsed.config
+                : readCurrentThemeConfig(themeDir, builder);
             const nextCfg = builder.applyPresetToConfig(baseCfg, parsed.presetId);
             const res = builder.applyThemeConfig(themeDir, nextCfg);
             await broadcastThemeCssRefresh();
@@ -3712,7 +3726,10 @@ async function handleStudioMessage(win, wc, rawMsg) {
 
         if (action === "save-profile") {
             markInternalWrite();
-            const baseCfg = builder.mergeConfig(parsed.config || readCurrentThemeConfig(themeDir, builder));
+            const rawCfg = (parsed.config && typeof parsed.config === "object" && !Array.isArray(parsed.config))
+                ? parsed.config
+                : readCurrentThemeConfig(themeDir, builder);
+            const baseCfg = builder.mergeConfig(rawCfg);
             const saveOpts = {
                 id: parsed.profileId,
                 description: parsed.description,
