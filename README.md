@@ -43,7 +43,7 @@ Bộ giao diện **Kanagawa Wave (Tối)**, **Kanagawa Lotus (Sáng)** & **In-Ap
 #### Cách B — Dùng Git & PowerShell
 Mở PowerShell **bên ngoài Antigravity** (không chạy trong terminal bên trong Antigravity nếu dùng `-KillRunning`):
 ```powershell
-git clone https://github.com/kienvts123-collab/Antigravity-Theme.git
+git clone https://github.com/KwaiPowie/Antigravity-Theme.git
 cd Antigravity-Theme
 .\install.ps1 -KillRunning
 ```
@@ -122,7 +122,7 @@ A customizable **Kanagawa Wave (Dark)**, **Kanagawa Lotus (Light)** & **Live In-
 #### Option B — Git & PowerShell
 Run from an **external PowerShell** window (not inside Antigravity's integrated terminal if using `-KillRunning`):
 ```powershell
-git clone https://github.com/kienvts123-collab/Antigravity-Theme.git
+git clone https://github.com/KwaiPowie/Antigravity-Theme.git
 cd Antigravity-Theme
 .\install.ps1 -KillRunning
 ```
